@@ -37,17 +37,44 @@ X-API-KEY: <YOUR_API_KEY>
 Content-Type: application/json
 
 { "input": "voice or text payload", "mode": "shield|honeypot" }
+
 ```
 
 ## 🗺️ Architecture (High-Level)
 ```mermaid
 flowchart TD
-  A[Client] --> B[Auth]
-  B --> C[Text/Audio Intake]
-  C --> D[AI Scam Classifier]
-  D --> E[SSF Fingerprinting]
-  E --> F{Shield Reply | Honeypot Agent}
-  F --> G[JSON Response]
+  %% Client and Entry Layer
+  A[Client] -->|POST /v1/scan| B[Auth & Rate Limit]
+  
+  %% Intake Layer
+  B --> C{Intake Type}
+  C -->|Text| D[Sanitization]
+  C -->|Audio| E[Whisper Transcription]
+  E --> F[Voice Signal Analysis]
+  
+  %% AI Core Analysis Layer
+  D --> G[Gemini 2.0 Flash Classifier]
+  F --> G
+  G --> H[SSF Engine]
+  
+  %% Decision & Mode Selection Layer
+  H --> I{Decision Engine}
+  I -->|Confidence < Threshold| J[Shield Reply]
+  I -->|Confidence >= Threshold| K{Operation Mode}
+  
+  %% Mode Specific Logic
+  K -->|Shield| L[Defensive Response]
+  K -->|Honeypot| M[Autonomous Agentic Engagement]
+  
+  %% Intelligence & Response Layer
+  L --> N[Response Builder]
+  M --> N
+  N --> O[Structured JSON Response]
+  
+  %% Styling
+  style G fill:#f96,stroke:#333,stroke-width:2px
+  style M fill:#bbf,stroke:#333,stroke-width:2px
+  style O fill:#dfd,stroke:#333,stroke-width:2px
 ```
 
 ## 📁 Repository Structure

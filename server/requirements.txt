@@ -1,0 +1,29 @@
+# BlockSafe API Dependencies
+# Updated: 2026-01-30
+
+# FastAPI Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-multipart==0.0.22  # Fixed CVE-2024-53981, CVE-2026-24486
+
+# Google Gemini AI
+google-genai>=1.0.0
+
+# Audio Processing
+faster-whisper==1.0.3
+librosa==0.10.2.post1
+soundfile==0.12.1
+numpy==1.26.4
+
+# HTTP & Utilities
+requests==2.32.4  # Fixed CVE-2024-47081
+python-dotenv==1.0.1
+anyio==4.6.2
+typing-extensions==4.12.2
+
+# Testing (dev dependencies)
+pytest==8.3.4
+pytest-asyncio==0.24.0
+httpx==0.28.1

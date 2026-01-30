@@ -1,0 +1,204 @@
+# BlockSafe .gitignore
+
+# =============================================================================
+# SECRETS & ENVIRONMENT (CRITICAL - NEVER COMMIT)
+# =============================================================================
+.env
+.env.local
+.env.*.local
+*.secret
+secrets/
+credentials/
+# Additional local config and secrets
+.env.production
+.env.staging
+.env.development
+.env.test
+.envrc
+
+# =============================================================================
+# PYTHON
+# =============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env.bak/
+
+# =============================================================================
+# TESTING
+# =============================================================================
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+pytest_cache/
+
+# Test outputs
+test_output/
+test_results/
+*.test.log
+
+# =============================================================================
+# IDE & EDITORS
+# =============================================================================
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# =============================================================================
+# OPERATING SYSTEM
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# =============================================================================
+# LOGS & TEMPORARY FILES
+# =============================================================================
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+temp/
+
+# =============================================================================
+# AI/ML MODELS (Large files)
+# =============================================================================
+models/
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+whisper_models/
+
+# Hugging Face cache (optional - can be large)
+# .cache/huggingface/
+
+# =============================================================================
+# AUDIO FILES (Test data)
+# =============================================================================
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.flac
+test_audio/
+audio_samples/
+
+# =============================================================================
+# DATABASE (if added in future)
+# =============================================================================
+*.db
+*.sqlite
+*.sqlite3
+
+# =============================================================================
+# DOCUMENTATION BUILD
+# =============================================================================
+docs/_build/
+site/
+
+# =============================================================================
+# DOCKER
+# =============================================================================
+docker-compose.override.yml
+.docker/
+
+# =============================================================================
+# MISC
+# =============================================================================
+*.bak
+*.backup
+.benchmarks/
+# Local HTTP client collections / base URLs
+*.http
+*.rest
+
+# Local override configs
+config.local.*
+*.local.json
+*.local.yaml
+*.local.yml

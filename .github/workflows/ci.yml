@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+
+jobs:
+  lint-and-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      GEMINI_API_KEY: dummy-key
+      API_AUTH_KEY: dummy-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Static bytecode check
+        run: python -m compileall app
+
+      - name: Startup sanity (imports + health)
+        run: |
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          from app.main import app
+
+          with TestClient(app) as client:
+              response = client.get("/health")
+              assert response.status_code == 200, f"Health check failed: {response.status_code}"
+              print("Health endpoint OK")
+          PY

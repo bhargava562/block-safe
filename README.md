@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11-blue" />
   <img src="https://img.shields.io/badge/FastAPI-0.110-green" />
-  <img src="https://img.shields.io/badge/Gemini-2.0%20Flash-orange" />
+  <img src="https://img.shields.io/badge/Gemini-2.5%20Flash-orange" />
   <img src="https://img.shields.io/badge/Scam%20Detection-AI--Powered-red" />
   <img src="https://img.shields.io/badge/Mode-Shield%20%7C%20Honeypot-purple" />
   <img src="https://img.shields.io/badge/Stateless-Yes-success" />
@@ -17,7 +17,7 @@
 
 ## 🎯 What BlockSafe Does
 - 🎙️ Accepts text or audio inputs.
-- 🧠 Detects scams using Gemini 2.0 Flash.
+- 🧠 Detects scams using Gemini 2.5 Flash.
 - 🪪 Generates Scam Strategy Fingerprints (SSF).
 - 🛡️ Operates in Shield mode (defensive) or 🍯 Honeypot mode (intelligence extraction).
 - 📦 Returns deterministic JSON for evaluation.
@@ -53,7 +53,7 @@ flowchart TD
   E --> F[Voice Signal Analysis]
   
   %% AI Core Analysis Layer
-  D --> G[Gemini 2.0 Flash Classifier]
+  D --> G[Gemini 2.5 Flash Classifier]
   F --> G
   G --> H[SSF Engine]
   
@@ -78,6 +78,7 @@ flowchart TD
 ```
 
 ## 📁 Repository Structure
+```
 /
 ├── server/        # Backend implementation (detailed README inside)
 ├── .github/       # CI/CD workflows
@@ -86,6 +87,7 @@ flowchart TD
 
 - Server README contains full technical details.
 - Root README is intentionally high-level.
+```
 
 ## 🐳 Docker Support
 - Dockerfiles are provided for containerized deployment.

@@ -14,7 +14,8 @@ from google.genai import types
 
 from app.config import get_settings
 from app.utils.logger import logger
-from app.utils.helpers import extract_all_entities, ExtractedData
+from app.utils.helpers import extract_all_entities, ExtractedData, count_entities
+from app.core.dataset_manager import get_dataset_manager
 
 
 @dataclass
@@ -46,23 +47,29 @@ MESSAGE TO ANALYZE:
 {message}
 
 Analyze for these scam indicators:
-1. Urgency or pressure tactics
-2. Requests for personal/financial information
+1. Urgency or pressure tactics ("immediately", "urgent", "act now")
+2. Requests for personal/financial information:
+   - Credit/debit card numbers (16 digits, CVV, expiry)
+   - Bank account details, PIN, passwords
+   - OTP, verification codes
+   - Personal documents (Aadhaar, PAN)
 3. Suspicious links or contact methods
-4. Impersonation of authority figures or organizations
+4. Impersonation of authority figures (bank, police, government)
 5. Too-good-to-be-true offers
-6. Grammatical errors typical of scam messages
+6. Payment demands or threats of account blocking
 7. Requests to switch communication channels
+
+CRITICAL: Any request for card numbers, CVV, PIN, OTP, or banking credentials is HIGH RISK scam.
 
 Respond ONLY with valid JSON in this exact format:
 {{
     "is_scam": true/false,
     "confidence": 0.0-1.0,
-    "scam_type": "bank_impersonation" | "upi_fraud" | "phishing" | "lottery_scam" | "tech_support_scam" | "investment_scam" | "romance_scam" | "job_scam" | "government_impersonation" | null,
+    "scam_type": "card_fraud" | "bank_impersonation" | "upi_fraud" | "phishing" | "lottery_scam" | "tech_support_scam" | "investment_scam" | "romance_scam" | "job_scam" | "government_impersonation" | null,
     "reasoning": "Brief explanation of classification"
 }}
 
-Be conservative: only classify as scam if confidence is high. Return confidence based on how many indicators are present."""
+For card/banking credential requests: is_scam=true, confidence=0.9+, scam_type="card_fraud"""
 
     def __new__(cls) -> "ScamClassifier":
         if cls._instance is None:
@@ -72,6 +79,7 @@ Be conservative: only classify as scam if confidence is high. Return confidence 
     def __init__(self):
         if not ScamClassifier._configured:
             self._configure()
+        self.dataset_manager = get_dataset_manager()
 
     def _configure(self) -> None:
         """Configure Gemini API client"""
@@ -121,16 +129,20 @@ Be conservative: only classify as scam if confidence is high. Return confidence 
                 model=settings.GEMINI_MODEL,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    temperature=0.1,
+                    temperature=0.0,  # Deterministic output
                     top_p=0.95,
                     top_k=40,
-                    max_output_tokens=1024,
+                    max_output_tokens=512,  # Reduced for faster response
                 )
             )
 
             # Parse JSON response
             result = self._parse_response(response.text)
             result.extracted_entities = entities
+            
+            # Adjust confidence based on detected entities (risk calibration)
+            result = self._calibrate_confidence(result, entities)
+            
             # Cache successful result
             self._set_cache(message, result)
 
@@ -138,10 +150,13 @@ Be conservative: only classify as scam if confidence is high. Return confidence 
 
         except Exception as e:
             logger.error(f"Classification failed: {e}")
-            # Return safe default on failure
+            # Return safe default with risk-based confidence
+            entity_count = len(entities.phone_numbers) + len(entities.upi_ids) + len(entities.urls)
+            base_confidence = min(entity_count * 0.1, 0.3)  # 0.1-0.3 for detected entities
+            
             return ClassificationResult(
                 is_scam=False,
-                confidence=0.0,
+                confidence=base_confidence,
                 scam_type=None,
                 reasoning=f"Classification error: {str(e)}",
                 extracted_entities=entities
@@ -172,16 +187,30 @@ Be conservative: only classify as scam if confidence is high. Return confidence 
             logger.error(f"Failed to parse classification response: {e}")
             logger.debug(f"Raw response: {response_text}")
 
-            # Attempt basic extraction
+            # Attempt basic extraction with risk-based confidence
             is_scam = "true" in response_text.lower() and "is_scam" in response_text.lower()
+            
+            # Calculate confidence based on detected entities
+            entity_count = 0  # Will be updated by caller
+            base_confidence = 0.15 if is_scam else 0.05  # Non-zero baseline
 
             return ClassificationResult(
                 is_scam=is_scam,
-                confidence=0.5 if is_scam else 0.0,
+                confidence=base_confidence,
                 scam_type=None,
                 reasoning="Response parsing failed, using fallback classification",
                 extracted_entities=ExtractedData([], [], [], [])
             )
+
+    def _calibrate_confidence(self, result: ClassificationResult, entities: ExtractedData) -> ClassificationResult:
+        """Calibrate confidence based on detected financial entities"""
+        entity_count = count_entities(entities)
+        
+        if not result.is_scam and result.confidence == 0.0 and entity_count > 0:
+            # Non-scam with financial entities = low but non-zero risk
+            result.confidence = min(0.1 + (entity_count * 0.05), 0.3)
+        
+        return result
 
     def _get_cached(self, message: str) -> Optional[ClassificationResult]:
         now = time.time()

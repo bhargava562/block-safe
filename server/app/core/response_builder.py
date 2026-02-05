@@ -36,7 +36,8 @@ class ResponseBuilder:
         mode: Literal["shield", "honeypot"],
         transcript: Optional[str] = None,
         voice_signals: Optional[VoiceSignals] = None,
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
+        session_id: Optional[str] = None
     ) -> AnalysisResponse:
         """
         Build complete analysis response.
@@ -56,6 +57,7 @@ class ResponseBuilder:
         """
         # Generate request ID and timestamp
         req_id = request_id or str(uuid4())
+        sess_id = session_id or str(uuid4())
         timestamp = datetime.now(timezone.utc).isoformat()
 
         # Build extracted entities
@@ -100,6 +102,7 @@ class ResponseBuilder:
 
         return AnalysisResponse(
             request_id=req_id,
+            session_id=sess_id,
             timestamp=timestamp,
             is_scam=classification.is_scam,
             confidence=round(classification.confidence, 2),
@@ -159,17 +162,22 @@ class ResponseBuilder:
     ) -> Literal["NONE", "LOW", "MEDIUM", "HIGH"]:
         """
         Calculate overall evidence level based on multiple signals.
-
-        HIGH: High confidence + multiple entities + strong SSF signals
-        MEDIUM: Moderate confidence + some entities/signals
-        LOW: Low confidence or minimal evidence
-        NONE: Not a scam
         """
+        # Calculate entity count
+        entity_count = count_entities(classification.extracted_entities)
+        if honeypot_result and honeypot_result.engaged:
+            entity_count = count_entities(honeypot_result.all_entities)
+        
+        # Non-scam cases
         if not classification.is_scam:
-            return "NONE"
-
+            if entity_count > 0:
+                return "LOW"  # Financial entities detected = low risk
+            else:
+                return "NONE"  # No entities = no risk
+        
+        # Scam cases - calculate score
         score = 0
-
+        
         # Confidence contribution
         if classification.confidence >= 0.9:
             score += 3
@@ -177,17 +185,13 @@ class ResponseBuilder:
             score += 2
         elif classification.confidence >= 0.5:
             score += 1
-
-        # Entity count contribution
-        entity_count = count_entities(classification.extracted_entities)
-        if honeypot_result and honeypot_result.engaged:
-            entity_count = count_entities(honeypot_result.all_entities)
-
+        
+        # Entity contribution
         if entity_count >= 3:
             score += 2
         elif entity_count >= 1:
             score += 1
-
+        
         # SSF contribution
         if ssf.urgency_score >= 0.7:
             score += 1
@@ -195,13 +199,13 @@ class ResponseBuilder:
             score += 1
         if ssf.payment_escalation:
             score += 1
-
+        
         # Honeypot contribution
         if honeypot_result and honeypot_result.engaged:
             score += 1
-
-        # Map score to level
-        if score >= 6:
+        
+        # Map to evidence level
+        if classification.confidence >= 0.8:
             return "HIGH"
         elif score >= 3:
             return "MEDIUM"
@@ -217,7 +221,7 @@ class ResponseBuilder:
     ) -> str:
         """Generate human-readable analysis summary"""
         if not classification.is_scam:
-            return "No scam indicators detected. Message appears legitimate."
+            return "No scam indicators detected. Message appears legitimate with low risk signals."
 
         parts = []
 
@@ -233,7 +237,7 @@ class ResponseBuilder:
             parts.append(f"{confidence_level}-confidence scam detected.")
 
         # SSF summary
-        if ssf.strategy_summary and ssf.strategy_summary != "No significant scam strategy patterns detected":
+        if ssf.strategy_summary and "Direct payment request" not in ssf.strategy_summary:
             parts.append(ssf.strategy_summary)
 
         # Honeypot summary

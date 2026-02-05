@@ -235,7 +235,7 @@ class SSFEngine:
             parts.append(f"Attempts to redirect to {channel_switch_intent}")
 
         if not parts:
-            return "No significant scam strategy patterns detected"
+            return "Direct payment request without advanced social-engineering patterns"
 
         return ". ".join(parts) + "."
 

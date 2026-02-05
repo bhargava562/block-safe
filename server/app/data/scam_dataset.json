@@ -1,0 +1,184 @@
+{
+  "dataset_version": "1.0",
+  "last_updated": "2026-02-01",
+  "description": "Comprehensive scam detection dataset covering financial, social engineering, digital, and cyber frauds",
+  "scams": [
+    {
+      "scam_id": "SCAM_FIN_001",
+      "category": "Banking & Finance",
+      "scam_type": "Bank Account Freeze Scam",
+      "channels": ["call", "sms", "whatsapp", "email"],
+      "description": "Victim is told their bank account will be frozen unless immediate action is taken.",
+      "common_keywords": [
+        "account blocked",
+        "KYC pending",
+        "verify immediately",
+        "bank security",
+        "account freeze"
+      ],
+      "behavioral_patterns": [
+        "creates urgency",
+        "asks for OTP",
+        "asks for CVV or PIN",
+        "impersonates bank official"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "scam_id": "SCAM_FIN_002",
+      "category": "Digital Payments",
+      "scam_type": "UPI Collect Request Scam",
+      "channels": ["upi", "call", "whatsapp"],
+      "description": "Victim is tricked into approving a UPI collect request believing they will receive money.",
+      "common_keywords": [
+        "receive money",
+        "approve request",
+        "refund",
+        "cashback",
+        "merchant payment"
+      ],
+      "behavioral_patterns": [
+        "reverse payment logic",
+        "fake refund story",
+        "screenshare request"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "scam_id": "SCAM_JOB_001",
+      "category": "Job & Employment",
+      "scam_type": "Fake Job Offer Scam",
+      "channels": ["email", "whatsapp", "telegram", "linkedin"],
+      "description": "Fake recruiters offer high-paying jobs with minimal qualifications.",
+      "common_keywords": [
+        "work from home",
+        "no experience needed",
+        "registration fee",
+        "HR message",
+        "instant joining"
+      ],
+      "behavioral_patterns": [
+        "asks for upfront fee",
+        "uses free email domains",
+        "too-good-to-be-true salary"
+      ],
+      "risk_level": "medium"
+    },
+    {
+      "scam_id": "SCAM_ROM_001",
+      "category": "Romance & Social Engineering",
+      "scam_type": "Romance Investment Scam",
+      "channels": ["instagram", "facebook", "dating_apps", "telegram"],
+      "description": "Scammer builds emotional relationship and later pushes victim into fake investments.",
+      "common_keywords": [
+        "trust me",
+        "secret investment",
+        "crypto profits",
+        "future together",
+        "exclusive opportunity"
+      ],
+      "behavioral_patterns": [
+        "long emotional grooming",
+        "moves conversation off platform",
+        "pushes crypto platforms"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "scam_id": "SCAM_TECH_001",
+      "category": "Tech Support",
+      "scam_type": "Fake Tech Support Scam",
+      "channels": ["call", "popup", "browser"],
+      "description": "Victim is told their device is infected and asked to pay for support.",
+      "common_keywords": [
+        "virus detected",
+        "windows support",
+        "do not shut down",
+        "remote access",
+        "security alert"
+      ],
+      "behavioral_patterns": [
+        "fake popups",
+        "asks to install remote software",
+        "demands payment"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "scam_id": "SCAM_CRYPTO_001",
+      "category": "Crypto & Investment",
+      "scam_type": "Pump and Dump Scheme",
+      "channels": ["telegram", "discord", "twitter"],
+      "description": "Groups promote unknown crypto tokens promising guaranteed returns.",
+      "common_keywords": [
+        "guaranteed profit",
+        "next bitcoin",
+        "insider tip",
+        "100x returns"
+      ],
+      "behavioral_patterns": [
+        "group hype",
+        "no whitepaper",
+        "anonymous developers"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "scam_id": "SCAM_GOV_001",
+      "category": "Government & Authority",
+      "scam_type": "Fake Legal Notice Scam",
+      "channels": ["email", "call", "sms"],
+      "description": "Scammer impersonates police, court, or tax authority.",
+      "common_keywords": [
+        "legal action",
+        "arrest warrant",
+        "income tax notice",
+        "court case"
+      ],
+      "behavioral_patterns": [
+        "fear intimidation",
+        "asks for immediate payment",
+        "refuses official verification"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "scam_id": "SCAM_ECOM_001",
+      "category": "E-Commerce",
+      "scam_type": "Fake Order / Refund Scam",
+      "channels": ["call", "sms", "email"],
+      "description": "Victim is contacted about a fake order or refund to extract payment info.",
+      "common_keywords": [
+        "order cancelled",
+        "refund processing",
+        "delivery issue",
+        "verify payment"
+      ],
+      "behavioral_patterns": [
+        "fake customer support",
+        "asks for OTP",
+        "spoofed numbers"
+      ],
+      "risk_level": "medium"
+    },
+    {
+      "scam_id": "SCAM_AI_001",
+      "category": "AI & Deepfake",
+      "scam_type": "Voice Deepfake Scam",
+      "channels": ["call"],
+      "description": "AI-generated voice mimics a known person requesting urgent money.",
+      "common_keywords": [
+        "emergency",
+        "need money now",
+        "don't tell anyone",
+        "trust me"
+      ],
+      "behavioral_patterns": [
+        "voice cloning",
+        "emotional manipulation",
+        "urgent transfer"
+      ],
+      "risk_level": "critical"
+    }
+  ]
+}

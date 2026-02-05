@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     MAX_AUDIO_MB: int = 10
 
     # Gemini model configuration
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
 
     # Honeypot configuration
     HONEYPOT_MAX_TURNS: int = 5

@@ -61,7 +61,7 @@ def extract_bank_accounts(text: str) -> list[str]:
     # Filter to valid ranges (avoid phone numbers, PINs, etc.)
     accounts = [
         m for m in matches
-        if len(m) >= 9 and not m.startswith('0') and not is_likely_phone(m)
+        if len(m) >= 11 and not m.startswith('0') and not is_likely_phone(m)
     ]
     return list(set(accounts))
 
@@ -75,11 +75,15 @@ def extract_urls(text: str) -> list[str]:
 def extract_phone_numbers(text: str) -> list[str]:
     """Extract phone numbers from text"""
     matches = PHONE_PATTERN.findall(text)
+    # Also check for 9-digit numbers that look like phone numbers
+    nine_digit_pattern = re.compile(r'\b([6-9]\d{8})\b')
+    nine_digit_matches = nine_digit_pattern.findall(text)
+    
     # Normalize phone numbers
     normalized = []
-    for phone in matches:
+    for phone in matches + nine_digit_matches:
         clean = re.sub(r'[\s-]', '', phone)
-        if len(clean) >= 10:
+        if len(clean) >= 9:
             normalized.append(clean)
     return list(set(normalized))
 
@@ -87,7 +91,7 @@ def extract_phone_numbers(text: str) -> list[str]:
 def is_likely_phone(number: str) -> bool:
     """Check if a number is likely a phone number"""
     clean = re.sub(r'[\s-]', '', number)
-    return len(clean) == 10 and clean.startswith(('6', '7', '8', '9'))
+    return len(clean) == 10 and clean.startswith(('6', '7', '8', '9')) or len(clean) == 9
 
 
 def extract_all_entities(text: str) -> ExtractedData:

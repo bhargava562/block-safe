@@ -1,31 +1,80 @@
+# Environment variables and secrets
+.env
+*.env
+.env.local
+.env.production
+
+# API Keys and secrets
+**/secrets/
+**/*secret*
+**/*key*
+**/*token*
+
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Virtual environments
-.venv/
 venv/
+env/
+ENV/
+.venv/
 
-# Environment variables
-.env
-.env.*
-*.env
-secrets.*
-secret.*
-
-# Logs
-*.log
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# IDE
-.vscode/
-.idea/
+# Logs
+*.log
+logs/
+blocksafe_test.log
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Audio files (for testing)
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.flac
 
 # Docker
-*.tar
-secrets/
+.dockerignore
+
+# CI/CD
+.github/secrets/

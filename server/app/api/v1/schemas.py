@@ -25,6 +25,10 @@ class TextInput(BaseModel):
         default="shield",
         description="Operation mode: 'shield' for protection only, 'honeypot' for active intelligence extraction"
     )
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Session ID for continuous chat (auto-generated if not provided)"
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -122,6 +126,7 @@ class AnalysisResponse(BaseModel):
     """Complete analysis response - deterministic JSON output"""
 
     request_id: str = Field(..., description="Unique request identifier (UUID)")
+    session_id: str = Field(..., description="Session identifier for continuous chat")
     timestamp: str = Field(..., description="ISO-8601 timestamp of analysis")
 
     # Classification results

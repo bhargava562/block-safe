@@ -1,14 +1,51 @@
-.venv
-__pycache__
-*.pyc
-*.log
-.env
-.env.*
-*.env
-secrets.*
-secret.*
-secrets/
+# Git
 .git
 .gitignore
-docs
-scripts
+
+# Documentation
+*.md
+documentation/
+
+# Test files
+*test*.py
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Audio test files
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.flac

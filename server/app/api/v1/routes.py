@@ -3,6 +3,7 @@ BlockSafe API Routes
 Main API endpoints for scam analysis
 """
 
+from datetime import datetime, timezone
 from typing import Annotated, Literal
 from uuid import uuid4
 
@@ -26,6 +27,7 @@ from app.core.scam_detector import get_classifier
 from app.core.ssf_engine import get_ssf_engine
 from app.core.honeypot import get_honeypot_agent
 from app.core.response_builder import ResponseBuilder
+from app.core.dataset_updater import get_dataset_updater
 from app.intelligence.speech_to_text import get_transcriber
 from app.intelligence.voice_analysis import get_voice_analyzer
 from app.utils.helpers import sanitize_text
@@ -55,8 +57,10 @@ async def analyze_text(
 
     - **message**: The text message to analyze
     - **mode**: "shield" (default) for protection only, "honeypot" for active extraction
+    - **session_id**: Optional session ID for continuous chat (auto-generated if not provided)
     """
     request_id = str(uuid4())
+    session_id = input_data.session_id or str(uuid4())
     log_request(request_id, "/analyze/text", input_data.mode)
 
     # Sanitize input
@@ -68,6 +72,7 @@ async def analyze_text(
     classifier = get_classifier()
     ssf_engine = get_ssf_engine()
     honeypot_agent = get_honeypot_agent()
+    dataset_updater = get_dataset_updater()
 
     # Step 1: Classify the message
     classification = await classifier.classify(message)
@@ -94,6 +99,13 @@ async def analyze_text(
             request_id=request_id
         )
 
+    # Step 3.5: Update dataset with new patterns (async, non-blocking)
+    if classification.is_scam and classification.confidence >= 0.8:
+        try:
+            await dataset_updater.analyze_for_new_pattern(message, classification, ssf_result)
+        except Exception as e:
+            logger.error(f"Dataset update failed: {e}")
+
     # Step 4: Build response
     response = ResponseBuilder.build(
         classification=classification,
@@ -101,7 +113,8 @@ async def analyze_text(
         honeypot_result=honeypot_result,
         original_message=message,
         mode=input_data.mode,
-        request_id=request_id
+        request_id=request_id,
+        session_id=session_id
     )
 
     return response
@@ -203,6 +216,27 @@ async def analyze_audio(
     )
 
     return response
+
+
+@router.get(
+    "/dataset/stats",
+    summary="Get dataset statistics",
+    description="Get current scam dataset statistics and patterns"
+)
+async def get_dataset_stats(
+    settings: Annotated[Settings, Depends(get_settings)],
+    rate_limit: None = Depends(enforce_rate_limit)
+):
+    """
+    Get current dataset statistics.
+    """
+    dataset_updater = get_dataset_updater()
+    stats = dataset_updater.get_dataset_stats()
+    
+    return {
+        "dataset_stats": stats,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 
 # Health check endpoint (no auth required)

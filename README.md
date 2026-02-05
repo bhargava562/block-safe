@@ -4,7 +4,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green)](https://fastapi.tiangolo.com)
 [![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-orange)](https://ai.google.dev)
 
-> **Live API Endpoint**: `[INSERT_YOUR_DEPLOYMENT_URL_HERE]`
+> **Live API Endpoint**: `https://blocksafe-latest.onrender.com/api/v1/analyze/text`
 
 BlockSafe is a production-ready AI system for real-time scam detection and intelligence extraction. It provides both defensive (Shield) and intelligence gathering (Honeypot) capabilities with multi-modal analysis supporting text and audio inputs.
 

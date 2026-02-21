@@ -37,3 +37,30 @@ services:
         reservations:
           memory: 512M
           cpus: "0.5"
+
+  blocksafe-bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: blocksafe-bot
+    restart: unless-stopped
+    depends_on:
+      blocksafe-api:
+        condition: service_healthy
+    env_file:
+      - server/.env # Use same environment for shared keys
+    environment:
+      - BLOCKSAFE_API_URL=http://blocksafe-api:8000/api/v1/analyze/text
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+
+  blocksafe-dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    container_name: blocksafe-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_SUPABASE_URL=${SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${SUPABASE_SERVICE_KEY}

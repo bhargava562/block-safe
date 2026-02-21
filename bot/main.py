@@ -17,7 +17,7 @@ load_dotenv()
 
 # Configuration
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "your_token_here")
-API_URL = os.getenv("BLOCKSAFE_API_URL", "http://127.0.0.1:8000/api/v1/analyze/text")
+API_URL = os.getenv("BLOCKSAFE_API_URL", "http://blocksafe-api:8000/api/v1/analyze/text")
 API_KEY = os.getenv("API_KEY", "your_api_auth_key_here")  # For X-API-KEY header
 
 # Logging

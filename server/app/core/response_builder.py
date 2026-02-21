@@ -302,7 +302,7 @@ class ResponseBuilder:
             parts.append(f"{confidence_level}-confidence scam detected.")
 
         # SSF summary
-        if ssf.strategy_summary and "Direct payment request" not in ssf.strategy_summary:
+        if ssf.strategy_summary and "No significant" not in ssf.strategy_summary:
             parts.append(ssf.strategy_summary)
 
         # Honeypot summary

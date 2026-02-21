@@ -107,8 +107,6 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
 
         except Exception as e:
             logger.error(f"Failed to configure Gemini: {e}")
-        except Exception as e:
-            logger.error(f"Failed to configure Gemini: {e}")
             ScamClassifier._configured = False
             # Do not raise here, allow app to start
 

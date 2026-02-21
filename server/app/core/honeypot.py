@@ -105,43 +105,64 @@ I'll contact my bank directly using the number on my card. Thank you for your co
             self._configure()
 
     def _configure(self) -> None:
-        """Configure Gemini for honeypot engagement"""
+        """Configure High-Availability LLM chain for honeypot"""
         try:
             settings = get_settings()
-
-            # Initialize the new google-genai client
-            HoneypotAgent._client = genai.Client(
-                api_key=settings.GEMINI_API_KEY.get_secret_value()
+            
+            # 1. Groq (Primary)
+            from langchain_groq import ChatGroq
+            self.groq_llm = ChatGroq(
+                model=settings.GROQ_MODEL,
+                api_key=settings.GROQ_API_KEY.get_secret_value() if settings.has_groq else "dummy",
+                temperature=0.7,
+                max_tokens=512,
+                request_timeout=settings.AGENT_TIMEOUT_SECONDS,
+                max_retries=1
+            )
+            
+            # 2. DeepSeek (Fallback)
+            from langchain_openai import ChatOpenAI
+            self.deepseek_llm = ChatOpenAI(
+                model=settings.DEEPSEEK_MODEL,
+                api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
+                base_url="https://api.deepseek.com",
+                temperature=0.7,
+                max_tokens=512,
+                request_timeout=settings.AGENT_TIMEOUT_SECONDS,
+                max_retries=1
             )
 
+            # Define fallback sequence
+            fallbacks = []
+            if settings.has_deepseek: 
+                fallbacks.append(self.deepseek_llm)
+            
+            self._chain = self.groq_llm.with_fallbacks(fallbacks)
             HoneypotAgent._configured = True
-            logger.info("Honeypot agent configured")
+            logger.info("Honeypot agent configured with Groq->DeepSeek fallback chain")
 
-        except Exception as e:
-            logger.error(f"Failed to configure honeypot: {e}")
         except Exception as e:
             logger.error(f"Failed to configure honeypot: {e}")
             HoneypotAgent._configured = False
-            # Do not raise here, allow app to start
 
     async def engage(
         self,
         initial_message: str,
         mode: str,
         initial_entities: ExtractedData,
-        request_id: str
+        request_id: str,
+        history: List[dict] = None,
+        turns_completed: int = 0
     ) -> HoneypotResult:
         """
         Engage with scammer or return shield response.
-
         Args:
             initial_message: The scam message
             mode: "shield" or "honeypot"
             initial_entities: Already extracted entities
             request_id: For logging
-
-        Returns:
-            HoneypotResult with engagement details
+            history: Optional list of past messages [{role, text}]
+            turns_completed: Number of turns already performed in this session
         """
         settings = get_settings()
 
@@ -161,7 +182,6 @@ I'll contact my bank directly using the number on my card. Thank you for your co
 
         # Shield mode - no engagement
         if mode == "shield":
-
             return HoneypotResult(
                 engaged=False,
                 turns_completed=0,
@@ -171,168 +191,123 @@ I'll contact my bank directly using the number on my card. Thank you for your co
                 conversation_history=[]
             )
 
+        # ── Governor's Kill Switch ──
+        if turns_completed >= settings.HONEYPOT_MAX_TURNS:
+            log_honeypot(request_id, turns_completed, "kill_switch_triggered")
+            return HoneypotResult(
+                engaged=False,
+                turns_completed=turns_completed,
+                termination_reason=TerminationReason.MAX_TURNS_REACHED,
+                all_entities=initial_entities,
+                conversation_summary="Governor's Kill Switch: Max turns reached. Session terminated.",
+                conversation_history=[]
+            )
 
-        return await self._run_honeypot(
-            initial_message=initial_message,
-            initial_entities=initial_entities,
-            request_id=request_id,
-            max_turns=settings.HONEYPOT_MAX_TURNS,
-            no_progress_limit=settings.HONEYPOT_NO_PROGRESS_TURNS
-        )
+        # ── Perform Reactive Turn ──
+        try:
+            # 1. Format context
+            history_str = self._format_history_from_db(history)
+            
+            # 2. Generate AI response
+            response_data = await self._generate_response(initial_message, history_str)
+            
+            response_content = response_data.get("content", "")
+            trust_score = response_data.get("trust_score", 0.0)
+            alternate_content = response_data.get("alternate_content", "")
+            scammer_tone = response_data.get("scammer_tone", "Unknown")
+            agent_tone = response_data.get("agent_tone", "Neutral")
 
-    async def _run_honeypot(
-        self,
-        initial_message: str,
-        initial_entities: ExtractedData,
-        request_id: str,
-        max_turns: int,
-        no_progress_limit: int
-    ) -> HoneypotResult:
-        """Run bounded honeypot engagement with kill-switch logic"""
+            # 3. Extract entities
+            turn_entities = extract_all_entities(initial_message + " " + response_content)
+            all_entities = merge_entities(initial_entities, turn_entities)
 
-        conversation_history: List[HoneypotTurn] = []
-        all_entities = initial_entities
-        previous_entity_count = count_entities(initial_entities)
-        no_progress_turns = 0
-        last_messages: List[str] = []
+            # 4. Build turn object
+            turn_obj = HoneypotTurn(
+                turn_number=turns_completed + 1,
+                scammer_message=initial_message,
+                agent_response=response_content,
+                entities_extracted=turn_entities
+            )
+            turn_obj.trust_score = trust_score
+            turn_obj.alternate_content = alternate_content
+            turn_obj.scammer_tone = scammer_tone
+            turn_obj.agent_tone = agent_tone
 
-        current_message = initial_message
+            # Determine termination reason
+            reason = TerminationReason.EXTRACTION_COMPLETE if count_entities(all_entities) >= 5 else TerminationReason.MAX_TURNS_REACHED if (turns_completed + 1) >= settings.HONEYPOT_MAX_TURNS else TerminationReason.SCAMMER_DISENGAGED
+            
+            if reason == TerminationReason.SCAMMER_DISENGAGED:
+                # This is a temporary state until next message
+                summary = f"Honeypot turn {turns_completed + 1} successful. Context maintained."
+            else:
+                summary = self._generate_summary([turn_obj], all_entities, reason)
 
-        for turn in range(1, max_turns + 1):
-            try:
-                # Check for repeated pattern (kill-switch)
-                if self._is_repeated_pattern(current_message, last_messages):
-                    log_honeypot(request_id, turn - 1, "repeated_pattern")
-                    return self._build_result(
-                        conversation_history,
-                        all_entities,
-                        TerminationReason.REPEATED_PATTERN
-                    )
+            return HoneypotResult(
+                engaged=True,
+                turns_completed=turns_completed + 1,
+                termination_reason=reason,
+                all_entities=all_entities,
+                conversation_summary=summary,
+                conversation_history=[turn_obj]
+            )
 
-                last_messages.append(current_message)
-                if len(last_messages) > 3:
-                    last_messages.pop(0)
+        except Exception as e:
+            logger.error(f"Honeypot engagement error: {e}")
+            return HoneypotResult(
+                engaged=False,
+                turns_completed=turns_completed,
+                termination_reason=TerminationReason.ERROR,
+                all_entities=initial_entities,
+                conversation_summary=f"Internal agent error: {str(e)}",
+                conversation_history=[]
+            )
 
-                # Generate agent response
-                history_str = self._format_history(conversation_history)
-                response_data = await self._generate_response(current_message, history_str)
-                
-                response_content = response_data.get("content", "")
-                trust_score = response_data.get("trust_score", 0.0)
-                alternate_content = response_data.get("alternate_content", "")
-                scammer_tone = response_data.get("scammer_tone", "Unknown")
-                agent_tone = response_data.get("agent_tone", "Neutral")
+    def _format_history_from_db(self, history: List[dict] = None) -> str:
+        """Format history retrieved from Supabase for the LLM prompt"""
+        if not history:
+            return "No previous conversation"
 
-                # Extract entities from this turn
-                turn_entities = extract_all_entities(current_message + " " + response_content)
-                all_entities = merge_entities(all_entities, turn_entities)
+        lines = []
+        for msg in history:
+            role = "Scammer" if msg["sender_role"] == "scammer" else "You"
+            lines.append(f"{role}: {msg['message_text']}")
 
-                # Record turn
-                turn_obj = HoneypotTurn(
-                    turn_number=turn,
-                    scammer_message=current_message,
-                    agent_response=response_content,
-                    entities_extracted=turn_entities
-                )
-                # Attach extra data 
-                turn_obj.trust_score = trust_score
-                turn_obj.alternate_content = alternate_content
-                turn_obj.scammer_tone = scammer_tone
-                turn_obj.agent_tone = agent_tone
-                
-                conversation_history.append(turn_obj)
-
-                # Check progress (kill-switch)
-                current_entity_count = count_entities(all_entities)
-                if current_entity_count == previous_entity_count:
-                    no_progress_turns += 1
-                else:
-                    no_progress_turns = 0
-                    previous_entity_count = current_entity_count
-
-                if no_progress_turns >= no_progress_limit:
-                    log_honeypot(request_id, turn, "no_new_entities")
-                    return self._build_result(
-                        conversation_history,
-                        all_entities,
-                        TerminationReason.NO_NEW_ENTITIES
-                    )
-
-                # Check if we have sufficient intelligence
-                if current_entity_count >= 5:
-                    log_honeypot(request_id, turn, "extraction_complete")
-                    return self._build_result(
-                        conversation_history,
-                        all_entities,
-                        TerminationReason.EXTRACTION_COMPLETE
-                    )
-
-                # Simulate next scammer message (in real scenario, this would come from external source)
-                # For evaluation, we complete after generating our response
-                current_message = ""  # Would be next scammer input
-                
-                # BREAK after 1 turn for now effectively, since we don't have a scammer simulator
-                # asking for 'next input'. In a real chat loop, this function would be called once per message.
-                # But the loop structure suggests internal simulation. 
-                # Given current_message becomes empty, the next loop likely fails or does nothing?
-                if not current_message:
-                    break
-
-            except Exception as e:
-                logger.error(f"Honeypot turn {turn} error: {e}")
-                return self._build_result(
-                    conversation_history,
-                    all_entities,
-                    TerminationReason.ERROR
-                )
-
-        # Max turns reached
-        log_honeypot(request_id, max_turns, "max_turns")
-        return self._build_result(
-            conversation_history,
-            all_entities,
-            TerminationReason.MAX_TURNS_REACHED
-        )
+        return "\n".join(lines)
 
     async def _generate_response(self, scammer_message: str, history: str) -> dict:
-        """Generate honeypot response using Gemini"""
+        """Generate honeypot response using High-Availability chain"""
         
-        if self._client is None:
-            raise RuntimeError("Honeypot model not initialized")
+        if not self._configured:
+            self._configure()
+            if not self._configured:
+                raise RuntimeError("Honeypot model not initialized")
 
-        settings = get_settings()
         prompt = self.ENGAGEMENT_PROMPT.format(
             scammer_message=scammer_message,
             history=history or "No previous conversation"
         )
 
-        response = None
-        retry_delay = 5
-        for attempt in range(5):
-            try:
-                response = await self._client.aio.models.generate_content(
-                    model=settings.GEMINI_MODEL,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.7,
-                        top_p=0.95,
-                        max_output_tokens=512,
-                        response_mime_type="application/json"
-                    )
-                )
-                break
-            except Exception as e:
-                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                    if attempt < 4:
-                        wait_time = retry_delay * (2 ** attempt)
-                        logger.warning(f"Rate limited (429), retrying in {wait_time}s...")
-                        await asyncio.sleep(wait_time)
-                        continue
-                logger.error(f"Gemini API error (attempt {attempt}): {e}")
-        
-        if response is None:
-             logger.error("Failed to get honeypot response after retries, using fallback")
-             return self._get_fallback_response()
+        try:
+            # Use ainvoke for LLM call
+            from langchain_core.messages import HumanMessage
+            response = await self._chain.ainvoke([HumanMessage(content=prompt)])
+            text = response.content.strip()
+            
+            # Remove markdown fences if any
+            if "```" in text:
+                 text = text.replace("```json", "").replace("```", "")
+            
+            # Find JSON object boundaries
+            start = text.find("{")
+            end = text.rfind("}")
+            
+            if start != -1 and end != -1:
+                text = text[start:end+1]
+            
+            return json.loads(text)
+        except Exception as e:
+            logger.error(f"Honeypot AI error: {e}")
+            return self._get_fallback_response()
 
         try:
             text = response.text.strip()

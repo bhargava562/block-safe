@@ -4,9 +4,9 @@
     "primary_target_entity": "SBI Bank",
     "scam_category": "phishing",
     "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 15,
+    "total_attempts_tracked": 19,
     "first_seen": "2026-02-21T09:08:02.112973+00:00",
-    "last_seen": "2026-02-21T12:11:03.851883+00:00",
+    "last_seen": "2026-02-21T13:14:14.387556+00:00",
     "threat_artifacts": {
       "channels_used": [
         "Call",
@@ -25,8 +25,8 @@
       "extracted_upis": []
     },
     "ai_feedback": {
-      "openai_emotional_profile": "The message induces fear by implying a potential loss of service or penalty due to an expired PAN card, creates urgency by prompting immediate action, and impersonates authority by claiming to be from SBI Care, aiming to manipulate the recipient into taking action without verifying the authenticity of the message.",
-      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. The provided link and phone number appear to be unofficial and may be phishing attempts. SBI Bank's policy is to not ask customers to verify sensitive information via unsecured links or unknown phone numbers. This message likely violates SBI Bank's policy by asking customers to reactivate their PAN card through an unverified link and phone number.",
+      "openai_emotional_profile": "The message induces fear by implying a potential loss of service or penalty due to an expired PAN card, creates urgency by prompting immediate action, and impersonates authority by posing as SBI Care, a legitimate customer support entity, to manipulate the recipient into taking action.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered phone numbers. The provided link http://sbi-secure.in/kyc-verify appears to be unofficial and may be phishing. Additionally, SBI Bank usually doesn't ask customers to reactivate their PAN card via a link or phone call. This message may be a scam attempting to steal sensitive customer information.",
       "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: phishing"
     },
     "raw_message_variants": [
@@ -42,9 +42,9 @@
     "primary_target_entity": "Amazon",
     "scam_category": "card_fraud",
     "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 5,
+    "total_attempts_tracked": 7,
     "first_seen": "2026-02-21T09:10:36.863771+00:00",
-    "last_seen": "2026-02-21T12:11:10.137809+00:00",
+    "last_seen": "2026-02-21T13:14:35.324314+00:00",
     "threat_artifacts": {
       "channels_used": [
         "SMS"
@@ -57,7 +57,7 @@
     },
     "ai_feedback": {
       "openai_emotional_profile": "The message uses a sense of excitement and reward to create a false sense of urgency, prompting the recipient to act quickly to claim the gift card. The use of a well-known brand name (Amazon) attempts to establish authority and trust. The request for an OTP (one-time password) is a potential phishing tactic, aiming to exploit the recipient's impulsive response to the perceived reward.",
-      "gemini_policy_violations": "Amazon does not typically communicate with customers through unsolicited messages or ask them to share sensitive information like OTPs on external links. This message is likely a phishing attempt, violating Amazon's policy of protecting customer data and security.",
+      "gemini_policy_violations": "Amazon does not typically communicate with customers via suspicious links or ask for OTP sharing. This message is likely a phishing attempt, violating Amazon's policy of protecting customer information and security.",
       "primary_suspected_reason": "Violates Amazon's official communication policy. Artificial urgency pressure applied. Matches pattern: card_fraud"
     },
     "raw_message_variants": [
@@ -126,9 +126,9 @@
     "primary_target_entity": "None (Personal Message)",
     "scam_category": "phishing",
     "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 2,
+    "total_attempts_tracked": 3,
     "first_seen": "2026-02-21T10:02:14.238865+00:00",
-    "last_seen": "2026-02-21T12:03:17.129804+00:00",
+    "last_seen": "2026-02-21T13:16:26.726335+00:00",
     "threat_artifacts": {
       "channels_used": [
         "UPI"
@@ -143,8 +143,8 @@
       ]
     },
     "ai_feedback": {
-      "openai_emotional_profile": "The message uses the word 'URGENT' to create a sense of urgency and panic, while also inducing fear by mentioning a 'severe accident', aiming to prompt immediate action and compliance from the recipient.",
-      "gemini_policy_violations": "This message does not appear to be from a corporate entity, but rather a personal request for financial assistance. As such, there are no corporate policies to validate against. However, it's worth noting that the message may be a phishing attempt or a scam, and the recipient should exercise caution before sending any money.",
+      "openai_emotional_profile": "The message uses the word 'URGENT' and reports a severe accident to induce fear and create a sense of urgency, prompting the recipient to act quickly without verifying the authenticity of the request.",
+      "gemini_policy_violations": "This message appears to be a personal request for financial assistance due to a family emergency, rather than a communication from a corporate entity. As such, it does not claim to be from a specific entity like a bank or government department, and does not trigger a policy validation check.",
       "primary_suspected_reason": "Violates None (Personal Message)'s official communication policy. High fear induction detected. Artificial urgency pressure applied. Matches pattern: phishing"
     },
     "raw_message_variants": [
@@ -354,6 +354,58 @@
     },
     "raw_message_variants": [
       "We have arrested your son, pay 25000 fine on gpay to this number 7567455645 or to this account number 3252138141334 or to this link https://kcpay.com and dont tell to anyone"
+    ]
+  },
+  {
+    "campaign_id": "CAMP-UNKNOWNGE-PHISHING-001",
+    "primary_target_entity": "Unknown/ Generic",
+    "scam_category": "phishing",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T14:00:27.804034+00:00",
+    "last_seen": "2026-02-21T14:00:27.804034+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [
+        "http://scam-link.tk"
+      ],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses the word 'URGENT' to create a sense of urgency, and implies a threat to the user's account to induce fear, while also attempting to impersonate a legitimate authority figure by demanding identity verification.",
+      "gemini_policy_violations": "The message does not specify a known entity, but the required action of verifying identity via a suspicious link is a common phishing tactic and violates the security policies of most legitimate organizations, which typically use secure, official channels for identity verification and do not create a sense of urgency to trick users into taking action.",
+      "primary_suspected_reason": "Violates Unknown/ Generic's official communication policy. High fear induction detected. Artificial urgency pressure applied. Matches pattern: phishing"
+    },
+    "raw_message_variants": [
+      "URGENT: Your account has been compromised. Verify your identity at http://scam-link.tk now!"
+    ]
+  },
+  {
+    "campaign_id": "CAMP-UNK-BANKIMPER-001",
+    "primary_target_entity": "bank",
+    "scam_category": "bank_impersonation",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T14:02:03.677618+00:00",
+    "last_seen": "2026-02-21T14:02:03.677618+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message induces fear by implying a potential security breach, creates urgency by implying a need for immediate action, and impersonates authority by claiming to be from the bank's support team, aiming to establish trust and compliance.",
+      "gemini_policy_violations": "The message claims to be from the bank's support, but it does not specify which bank. Legitimate banks usually address customers by their name and provide specific details about the suspicious transaction. Additionally, banks typically do not initiate contact via unsecured channels like text messages or emails. This message lacks transparency and may be a phishing attempt.",
+      "primary_suspected_reason": "Violates bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: bank_impersonation"
+    },
+    "raw_message_variants": [
+      "Hi, I am from your bank support. We detected a suspicious transaction."
     ]
   }
 ]

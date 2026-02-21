@@ -43,19 +43,23 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------
     GEMINI_API_KEY: SecretStr
     API_AUTH_KEY: SecretStr
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: Optional[SecretStr] = None
 
     # -----------------------------------------------------------------
     # 3. OPTIONAL AI PROVIDER KEYS (no crash if absent)
     # -----------------------------------------------------------------
     OPENAI_API_KEY: Optional[SecretStr] = None
     GROQ_API_KEY: Optional[SecretStr] = None
+    DEEPSEEK_API_KEY: Optional[SecretStr] = None
 
     # -----------------------------------------------------------------
     # 4. MODEL NAMES (read from env, sensible defaults)
     # -----------------------------------------------------------------
-    GEMINI_MODEL: str = "gemini-1.5-flash-latest"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
     OPENAI_MODEL: str = "gpt-4o-mini"
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    DEEPSEEK_MODEL: str = "deepseek-chat"
 
     # -----------------------------------------------------------------
     # 5. AUDIO / WHISPER
@@ -176,6 +180,20 @@ class Settings(BaseSettings):
         """Check if Groq provider is configured (key present and non-empty)."""
         return self.GROQ_API_KEY is not None and bool(
             self.GROQ_API_KEY.get_secret_value()
+        )
+
+    @property
+    def has_deepseek(self) -> bool:
+        """Check if DeepSeek provider is configured (key present and non-empty)."""
+        return self.DEEPSEEK_API_KEY is not None and bool(
+            self.DEEPSEEK_API_KEY.get_secret_value()
+        )
+
+    @property
+    def has_supabase(self) -> bool:
+        """Check if Supabase is configured."""
+        return bool(self.SUPABASE_URL) and self.SUPABASE_SERVICE_KEY is not None and bool(
+            self.SUPABASE_SERVICE_KEY.get_secret_value()
         )
 
 

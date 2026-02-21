@@ -119,12 +119,65 @@ async def analyze_text(
         classification.is_scam and
         effective_confidence >= settings.HONEYPOT_CONFIDENCE_THRESHOLD
     ):
+        history = []
+        turns_completed = 0
+        
+        # ── Supabase Strategy ──
+        if settings.has_supabase:
+            from app.database.supabase import get_db
+            db = get_db()
+            
+            # 1. Fetch/Create Session
+            session = await db.get_session(session_id)
+            if not session:
+                await db.create_session(
+                    session_id=session_id,
+                    campaign_id=multi_agent_result.campaign_result.get("campaign_id") if multi_agent_result else None,
+                    scam_type=classification.scam_type or "phishing",
+                    confidence=effective_confidence
+                )
+            else:
+                turns_completed = session.get("turns_completed", 0)
+                status = session.get("status", "active")
+                
+                # If session is terminated, bypass honeypot
+                if status != "active":
+                    logger.info(f"Session {session_id} is {status}. Bypassing honeypot.")
+                    return ResponseBuilder.build(
+                        classification=classification,
+                        ssf=ssf_result,
+                        honeypot_result=None,
+                        original_message=message,
+                        mode=input_data.mode,
+                        request_id=request_id,
+                        session_id=session_id,
+                        multi_agent_result=multi_agent_result,
+                    )
+
+            # 2. Retrieve last context (Sliding Window)
+            history = await db.get_history(session_id, limit=6)
+            
+            # 3. Save Scam Message
+            await db.add_message(session_id, "scammer", message)
+
+        # 4. Engage Honeypot
         honeypot_result = await honeypot_agent.engage(
             initial_message=message,
             mode=input_data.mode,
             initial_entities=classification.extracted_entities,
-            request_id=request_id
+            request_id=request_id,
+            history=history,
+            turns_completed=turns_completed
         )
+
+        # 5. Save AI Reply
+        if settings.has_supabase and honeypot_result and honeypot_result.engaged:
+            last_turn = honeypot_result.conversation_history[-1]
+            await db.add_message(session_id, "honeypot", last_turn.agent_response)
+            
+            # Check for Governor termination
+            if honeypot_result.termination_reason.value in ["max_turns_reached", "sufficient_intelligence_gathered"]:
+                await db.terminate_session(session_id, f"terminated_by_governor_{honeypot_result.termination_reason.value}")
 
     # Step 3.5: Update dataset with new patterns (async, non-blocking)
     if classification.is_scam and classification.confidence >= 0.8:

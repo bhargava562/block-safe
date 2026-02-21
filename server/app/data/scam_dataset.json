@@ -1,6 +1,6 @@
 {
   "dataset_version": "1.0",
-  "last_updated": "2026-02-01",
+  "last_updated": "2026-02-21",
   "description": "Comprehensive scam detection dataset covering financial, social engineering, digital, and cyber frauds",
   "scams": [
     {
@@ -245,6 +245,33 @@
         "urgent transfer"
       ],
       "risk_level": "critical"
+    },
+    {
+      "category": "Banking",
+      "scam_type": "bank_impersonation",
+      "channels": [
+        "sms",
+        "whatsapp",
+        "call"
+      ],
+      "description": "Scammers impersonate a bank or financial institution, often claiming a suspicious transaction or account issue, to trick victims into revealing personal information, OTPs, or transferring money.",
+      "common_keywords": [
+        "bank support",
+        "suspicious transaction",
+        "detected",
+        "account",
+        "security",
+        "verify"
+      ],
+      "behavioral_patterns": [
+        "impersonates a trusted entity",
+        "creates urgency",
+        "instills fear or concern",
+        "attempts to gather personal information",
+        "pretexting"
+      ],
+      "risk_level": "critical",
+      "scam_id": "SCAM_BAN_001"
     }
   ]
 }

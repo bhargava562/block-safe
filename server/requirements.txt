@@ -21,6 +21,8 @@ langchain-openai>=0.1.25
 langchain-google-genai>=1.0.8
 langchain-groq>=0.1.9
 langchain-text-splitters>=0.3.9
+duckduckgo-search>=6.0.0
+langchain-community>=0.3.0
 google-genai>=1.0.0
 protobuf>=5.29.6  # Fixes CVE-2026-0994 (DoS via Any nesting)
 
@@ -39,6 +41,7 @@ requests==2.32.4  # Fixed CVE-2024-47081 (.netrc leak)
 python-dotenv==1.0.1
 anyio==4.6.2.post1
 typing-extensions>=4.15.0
+supabase>=2.10.0
 
 # ---------------------------------------------------------
 # 5. TESTING (Dev Dependencies)

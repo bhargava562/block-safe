@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_REQUESTS: int = 100      # concurrency semaphore limit
     THREAD_POOL_WORKERS: int = 4            # thread pool for CPU-bound work (audio)
     RATE_LIMIT_MAX_CLIENTS: int = 10000     # max tracked clients (memory cap)
+    MERGE_SIMILARITY_THRESHOLD: float = 0.6 # threshold for campaign merging (0-1)
 
     # -----------------------------------------------------------------
     # VALIDATORS

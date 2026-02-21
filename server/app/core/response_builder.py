@@ -13,7 +13,9 @@ from app.api.v1.schemas import (
     SSFProfile,
     VoiceAnalysisResult,
     HoneypotResponseDetails,
-    HoneypotResult as HoneypotResponseModel
+    HoneypotResult as HoneypotResponseModel,
+    AIFeedback,
+    CampaignInfo
 )
 from app.core.scam_detector import ClassificationResult
 from app.core.ssf_engine import SSFResult
@@ -38,7 +40,8 @@ class ResponseBuilder:
         transcript: Optional[str] = None,
         voice_signals: Optional[VoiceSignals] = None,
         request_id: Optional[str] = None,
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        multi_agent_result=None,
     ) -> AnalysisResponse:
         """
         Build complete analysis response.
@@ -137,12 +140,34 @@ class ResponseBuilder:
             classification, ssf, honeypot_result, mode
         )
 
+        # Build multi-agent intelligence fields
+        ai_feedback_model = None
+        campaign_info_model = None
+        effective_confidence = classification.confidence
+
+        if multi_agent_result:
+            ai_feedback_model = AIFeedback(
+                openai_emotional_profile=multi_agent_result.psychological_analysis,
+                gemini_policy_violations=multi_agent_result.policy_analysis,
+                primary_suspected_reason=multi_agent_result.suspected_reason,
+            )
+            effective_confidence = multi_agent_result.aggregated_scam_score
+
+            campaign_data = multi_agent_result.campaign_result
+            if campaign_data and campaign_data.get("campaign_id"):
+                campaign_info_model = CampaignInfo(
+                    campaign_id=campaign_data["campaign_id"],
+                    is_new_campaign=campaign_data.get("is_new_campaign", True),
+                    total_attempts_tracked=campaign_data.get("total_attempts_tracked", 1),
+                    primary_target_entity=campaign_data.get("primary_target_entity", "Unknown"),
+                )
+
         return AnalysisResponse(
             request_id=req_id,
             session_id=sess_id,
             timestamp=timestamp,
             is_scam=classification.is_scam,
-            confidence=round(classification.confidence, 2),
+            confidence=round(effective_confidence, 2),
             scam_type=classification.scam_type,
             transcript=transcript,
             original_message=original_message,
@@ -153,7 +178,9 @@ class ResponseBuilder:
             honeypot_response=honeypot_response,
             agent_summary=agent_summary,
             evidence_level=evidence_level,
-            operation_mode=mode
+            operation_mode=mode,
+            ai_feedback=ai_feedback_model,
+            campaign_info=campaign_info_model,
         )
 
     @staticmethod

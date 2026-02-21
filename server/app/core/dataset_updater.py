@@ -3,8 +3,9 @@ BlockSafe Dataset Updater
 Automatically updates scam dataset when new patterns are detected
 """
 
-import asyncio
-from typing import Dict, List, Optional
+import json
+import re
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from google import genai
@@ -119,20 +120,25 @@ Respond with JSON:
                     max_output_tokens=512
                 )
             )
-            
-            import json
-            result = json.loads(response.text.strip())
-            
-            is_new = result.get('is_new_pattern', False)
-            novelty_score = result.get('novelty_score', 0.0)
-            
-            logger.info(f"Novelty analysis: new={is_new}, score={novelty_score}")
-            
-            return is_new and novelty_score >= 0.7
-            
+            raw_text = response.text
         except Exception as e:
-            logger.error(f"AI novelty analysis failed: {e}")
+            logger.warning(f"Gemini novelty analysis failed: {e}, trying Groq fallback")
+            raw_text = await self._run_groq_novelty(prompt)
+        
+        if not raw_text:
             return False
+
+        result = self._parse_json_response(raw_text)
+        if not result:
+            logger.error("Failed to parse novelty analysis JSON")
+            return False
+            
+        is_new = result.get('is_new_pattern', False)
+        novelty_score = result.get('novelty_score', 0.0)
+        
+        logger.info(f"Novelty analysis: new={is_new}, score={novelty_score}")
+        
+        return is_new and novelty_score >= 0.7
     
     async def _generate_pattern_data(
         self, 
@@ -175,23 +181,28 @@ Extract actual keywords and patterns from the message. Be specific and accurate.
                     max_output_tokens=1024
                 )
             )
-            
-            import json
-            pattern_data = json.loads(response.text.strip())
-            
-            # Validate required fields
-            required_fields = ['category', 'scam_type', 'channels', 'description', 
-                             'common_keywords', 'behavioral_patterns', 'risk_level']
-            
-            if all(field in pattern_data for field in required_fields):
-                logger.info(f"Generated new pattern: {pattern_data['scam_type']}")
-                return pattern_data
-            else:
-                logger.error("Generated pattern missing required fields")
-                return None
-                
+            raw_text = response.text
         except Exception as e:
-            logger.error(f"Pattern generation failed: {e}")
+            logger.warning(f"Gemini pattern generation failed: {e}, trying Groq fallback")
+            raw_text = await self._run_groq_pattern(prompt)
+
+        if not raw_text:
+            return None
+
+        pattern_data = self._parse_json_response(raw_text)
+        if not pattern_data:
+            logger.error("Failed to parse pattern generation JSON")
+            return None
+            
+        # Validate required fields
+        required_fields = ['category', 'scam_type', 'channels', 'description', 
+                         'common_keywords', 'behavioral_patterns', 'risk_level']
+        
+        if all(field in pattern_data for field in required_fields):
+            logger.info(f"Generated new pattern: {pattern_data['scam_type']}")
+            return pattern_data
+        else:
+            logger.error("Generated pattern missing required fields")
             return None
     
     def get_dataset_stats(self) -> Dict:
@@ -213,6 +224,63 @@ Extract actual keywords and patterns from the message. Be specific and accurate.
             stats["risk_levels"][pattern.risk_level] = stats["risk_levels"].get(pattern.risk_level, 0) + 1
         
         return stats
+
+    async def _run_groq_novelty(self, prompt: str) -> Optional[str]:
+        """Fallback to Groq for novelty analysis"""
+        if not self.settings.has_groq:
+            return None
+        try:
+            from langchain_groq import ChatGroq
+            llm = ChatGroq(
+                model=self.settings.GROQ_MODEL,
+                api_key=self.settings.GROQ_API_KEY.get_secret_value(),
+                temperature=0.1
+            )
+            response = await llm.ainvoke(prompt)
+            return response.content
+        except Exception as e:
+            logger.error(f"Groq novelty analysis failed: {e}")
+            return None
+
+    async def _run_groq_pattern(self, prompt: str) -> Optional[str]:
+        """Fallback to Groq for pattern generation"""
+        if not self.settings.has_groq:
+            return None
+        try:
+            from langchain_groq import ChatGroq
+            llm = ChatGroq(
+                model=self.settings.GROQ_MODEL,
+                api_key=self.settings.GROQ_API_KEY.get_secret_value(),
+                temperature=0.1
+            )
+            response = await llm.ainvoke(prompt)
+            return response.content
+        except Exception as e:
+            logger.error(f"Groq pattern generation failed: {e}")
+            return None
+
+    def _parse_json_response(self, text: str) -> Optional[Dict[str, Any]]:
+        """Bulletproof JSON extractor for chatty LLMs."""
+        if not text:
+            return None
+
+        try:
+            # First, try to parse it directly in case it's already perfect
+            return json.loads(text.strip())
+        except json.JSONDecodeError:
+            pass
+
+        try:
+            # Use regex to find the first '{' and the last '}'
+            # re.DOTALL allows the '.' to match newlines
+            match = re.search(r'\{.*\}', text, re.DOTALL)
+            if match:
+                clean_json_string = match.group(0)
+                return json.loads(clean_json_string)
+        except (json.JSONDecodeError, Exception) as e:
+            logger.debug(f"Regex JSON extraction failed: {e}")
+
+        return None
 
 
 # Singleton instance

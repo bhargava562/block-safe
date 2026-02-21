@@ -122,6 +122,32 @@ class HoneypotResult(BaseModel):
     conversation_summary: str = Field(default="", description="Summary of honeypot conversation")
 
 
+class AIFeedback(BaseModel):
+    """Multi-agent AI analysis feedback from the LangGraph swarm"""
+
+    openai_emotional_profile: str = Field(
+        default="",
+        description="OpenAI CognitiveProfiler: psychological manipulation analysis"
+    )
+    gemini_policy_violations: str = Field(
+        default="",
+        description="Gemini PolicyValidator: real-world policy violation analysis"
+    )
+    primary_suspected_reason: str = Field(
+        default="",
+        description="Synthesized reason combining both agents' findings"
+    )
+
+
+class CampaignInfo(BaseModel):
+    """Campaign clustering result from the Merging Intervals engine"""
+
+    campaign_id: str = Field(..., description="Campaign identifier (e.g., CAMP-SBI-KYC-001)")
+    is_new_campaign: bool = Field(..., description="True if a new campaign was created, False if merged")
+    total_attempts_tracked: int = Field(default=1, description="Total scam attempts tracked in this campaign")
+    primary_target_entity: str = Field(default="Unknown", description="Entity being impersonated")
+
+
 class AnalysisResponse(BaseModel):
     """Complete analysis response - deterministic JSON output"""
 
@@ -188,6 +214,16 @@ class AnalysisResponse(BaseModel):
     operation_mode: Literal["shield", "honeypot"] = Field(
         ...,
         description="Mode used for this analysis"
+    )
+
+    # Multi-Agent Intelligence (from LangGraph swarm)
+    ai_feedback: Optional[AIFeedback] = Field(
+        default=None,
+        description="Multi-agent AI feedback: emotional profiling + policy validation"
+    )
+    campaign_info: Optional[CampaignInfo] = Field(
+        default=None,
+        description="Campaign clustering result from Merging Intervals engine"
     )
 
     model_config = {

@@ -28,6 +28,8 @@ from app.core.ssf_engine import get_ssf_engine
 from app.core.honeypot import get_honeypot_agent
 from app.core.response_builder import ResponseBuilder
 from app.core.dataset_updater import get_dataset_updater
+from app.core.agent_swarm import get_agent_swarm
+from app.core.campaign_manager import get_campaign_manager
 from app.intelligence.speech_to_text import get_transcriber
 from app.intelligence.voice_analysis import get_voice_analyzer
 from app.utils.helpers import sanitize_text
@@ -87,13 +89,35 @@ async def analyze_text(
     # Step 2: Generate SSF profile
     ssf_result = ssf_engine.analyze(message)
 
+    # Step 2.5: Multi-Agent Deep Analysis (LangGraph Swarm)
+    multi_agent_result = None
+    try:
+        agent_swarm = get_agent_swarm()
+        multi_agent_result = await agent_swarm.analyze(
+            message=message,
+            classification=classification,
+            ssf_result=ssf_result
+        )
+        logger.info(
+            f"[{request_id}] Multi-agent score: {multi_agent_result.aggregated_scam_score}, "
+            f"Campaign: {multi_agent_result.campaign_result.get('campaign_id', 'N/A')}"
+        )
+    except Exception as e:
+        logger.error(f"Multi-agent analysis failed (non-fatal): {e}")
+
     # Step 3: Honeypot engagement (if applicable)
     honeypot_result = None
-    
-    
+
+    # Use aggregated score from swarm if available, otherwise fallback to classification
+    effective_confidence = (
+        multi_agent_result.aggregated_scam_score
+        if multi_agent_result
+        else classification.confidence
+    )
+
     if (
         classification.is_scam and
-        classification.confidence >= settings.HONEYPOT_CONFIDENCE_THRESHOLD
+        effective_confidence >= settings.HONEYPOT_CONFIDENCE_THRESHOLD
     ):
         honeypot_result = await honeypot_agent.engage(
             initial_message=message,
@@ -101,7 +125,6 @@ async def analyze_text(
             initial_entities=classification.extracted_entities,
             request_id=request_id
         )
-    
 
     # Step 3.5: Update dataset with new patterns (async, non-blocking)
     if classification.is_scam and classification.confidence >= 0.8:
@@ -118,7 +141,8 @@ async def analyze_text(
         original_message=message,
         mode=input_data.mode,
         request_id=request_id,
-        session_id=session_id
+        session_id=session_id,
+        multi_agent_result=multi_agent_result,
     )
 
     return response
@@ -194,11 +218,28 @@ async def analyze_audio(
     # Step 4: Generate SSF profile (with voice signals)
     ssf_result = ssf_engine.analyze(transcript, voice_signals)
 
+    # Step 4.5: Multi-Agent Deep Analysis (LangGraph Swarm)
+    multi_agent_result = None
+    try:
+        agent_swarm = get_agent_swarm()
+        multi_agent_result = await agent_swarm.analyze(
+            message=transcript,
+            classification=classification,
+            ssf_result=ssf_result
+        )
+    except Exception as e:
+        logger.error(f"Multi-agent analysis failed (non-fatal): {e}")
+
     # Step 5: Honeypot engagement (if applicable)
+    effective_confidence = (
+        multi_agent_result.aggregated_scam_score
+        if multi_agent_result
+        else classification.confidence
+    )
     honeypot_result = None
     if (
         classification.is_scam and
-        classification.confidence >= settings.HONEYPOT_CONFIDENCE_THRESHOLD
+        effective_confidence >= settings.HONEYPOT_CONFIDENCE_THRESHOLD
     ):
         honeypot_result = await honeypot_agent.engage(
             initial_message=transcript,
@@ -216,7 +257,8 @@ async def analyze_audio(
         mode=mode,
         transcript=transcript,
         voice_signals=voice_signals,
-        request_id=request_id
+        request_id=request_id,
+        multi_agent_result=multi_agent_result,
     )
 
     return response
@@ -239,6 +281,29 @@ async def get_dataset_stats(
     
     return {
         "dataset_stats": stats,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.get(
+    "/campaigns",
+    summary="Get threat campaigns",
+    description="Returns all tracked threat campaigns from the Merging Intervals engine"
+)
+async def get_campaigns(
+    settings: Annotated[Settings, Depends(get_settings)],
+    rate_limit: None = Depends(enforce_rate_limit)
+):
+    """
+    Get all threat campaigns tracked by the Merging Intervals engine.
+    """
+    campaign_mgr = get_campaign_manager()
+    campaigns = campaign_mgr.get_all_campaigns()
+    stats = campaign_mgr.get_campaign_stats()
+
+    return {
+        "campaigns": campaigns,
+        "stats": stats,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 

@@ -1,0 +1,154 @@
+[
+  {
+    "campaign_id": "CAMP-SBI-PHISHING-001",
+    "primary_target_entity": "SBI Bank",
+    "scam_category": "phishing",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 9,
+    "first_seen": "2026-02-21T09:08:02.112973+00:00",
+    "last_seen": "2026-02-21T09:58:55.337498+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "Call",
+        "SMS"
+      ],
+      "extracted_links": [
+        "http://sbi-secure.in/kyc-verify.",
+        "http://sbi-secure.in/update",
+        "http://sbi-secure.in/update-pan",
+        "http://sbi-secure.in/update-pan."
+      ],
+      "extracted_phones": [
+        "+919876543210",
+        "+919999888877"
+      ],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses the word 'URGENT' to create a sense of urgency, and implies a negative consequence ('account is blocked') to induce fear, while also impersonating a legitimate authority (SBI) to gain trust and prompt action.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. They usually do not send urgent messages with links to update sensitive information like PAN. This message is likely a phishing attempt, and the link provided may be malicious. SBI Bank's policy is to ensure customer security and privacy, and this message violates that policy by attempting to trick the customer into revealing sensitive information.",
+      "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: phishing"
+    },
+    "raw_message_variants": [
+      "URGENT: Your SBI account will be blocked in 24 hours! Update your PAN immediately by clicking: http://sbi-secure.in/update-pan. Contact: +919876543210. Failure to comply will result in account suspension - SBI Security Team",
+      "URGENT: Your SBI account will be blocked in 24 hours! Update your PAN immediately: http://sbi-secure.in/update-pan. Contact: +919876543210. - SBI Security Team",
+      "Dear customer, your SBI PAN card is expired. Reactivate now via http://sbi-secure.in/kyc-verify. Call +919999888877. - SBI Care",
+      "URGENT: Your SBI account will be blocked! Update PAN immediately: http://sbi-secure.in/update-pan",
+      "URGENT: Your SBI account is blocked! Update PAN immediately: http://sbi-secure.in/update"
+    ]
+  },
+  {
+    "campaign_id": "CAMP-AMAZON-CARDFRAUD-001",
+    "primary_target_entity": "Amazon",
+    "scam_category": "card_fraud",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 2,
+    "first_seen": "2026-02-21T09:10:36.863771+00:00",
+    "last_seen": "2026-02-21T09:12:53.802392+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [
+        "http://amazon-gifts.win/claim."
+      ],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses a sense of urgency by prompting the user to 'Claim now', and impersonates authority by using a well-known brand name 'Amazon'. The request to share OTP is a potential phishing tactic, aiming to exploit the user's excitement and trust.",
+      "gemini_policy_violations": "Amazon does not typically communicate with customers via suspicious links or ask them to share OTPs. This message is likely a phishing attempt, as Amazon's official policy is to never ask customers to share sensitive information such as OTPs via email or text messages. Additionally, the link provided is not an official Amazon website, further indicating a potential scam.",
+      "primary_suspected_reason": "Violates Amazon's official communication policy. Artificial urgency pressure applied. Matches pattern: card_fraud"
+    },
+    "raw_message_variants": [
+      "Congratulations You won Amazon Rs.50000 gift card! Claim now: http://amazon-gifts.win/claim. Share OTP."
+    ]
+  },
+  {
+    "campaign_id": "CAMP-NETFLIX-PHISHING-001",
+    "primary_target_entity": "Netflix",
+    "scam_category": "phishing",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 2,
+    "first_seen": "2026-02-21T09:17:52.740243+00:00",
+    "last_seen": "2026-02-21T09:18:23.613393+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [
+        "http://netflix-secure-billing.com"
+      ],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses urgency and fear induction by stating the account will be deleted, creating a sense of loss and prompting immediate action. It also impersonates authority by claiming to be from 'Netflix Support', aiming to establish trust and credibility.",
+      "gemini_policy_violations": "Netflix typically communicates with its users through its official website or mobile app, and any links to update billing information are usually provided within the user's account settings. The use of a third-party link (http://netflix-secure-billing.com) is suspicious and may be a phishing attempt, which violates Netflix's policy of prioritizing user security and using official channels for communication.",
+      "primary_suspected_reason": "Violates Netflix's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: phishing"
+    },
+    "raw_message_variants": [
+      "URGENT: Your Netflix subscription has been suspended due to payment failure. Update your billing info at http://netflix-secure-billing.com or your account will be deleted - Netflix Support"
+    ]
+  },
+  {
+    "campaign_id": "CAMP-SBI-CARDFRAUD-002",
+    "primary_target_entity": "SBI Bank",
+    "scam_category": "card_fraud",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 2,
+    "first_seen": "2026-02-21T09:45:52.700136+00:00",
+    "last_seen": "2026-02-21T09:51:00.122860+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "Call",
+        "SMS"
+      ],
+      "extracted_links": [
+        "http://sbi-kyc-verify.online/auth.",
+        "http://sbi-rewards-redeem.co"
+      ],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses urgency and fear induction by stating the account is suspended and may be permanently closed, creating a sense of panic. It also impersonates authority by claiming to be from SBI and using a formal tone, attempting to establish trust and legitimacy. The call to action to click a link and enter sensitive information is a common phishing tactic.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. They usually do not ask customers to verify their identity by clicking on external links, especially those that are not their official website (https://www.onlinesbi.com). Additionally, asking customers to use their PIN for verification on an external link is a potential phishing attempt, as SBI Bank would not ask customers to share sensitive information like PINs on unsecured channels.",
+      "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: card_fraud"
+    },
+    "raw_message_variants": [
+      "IMPORTANT: Your SBI credit card reward points worth Rs. 5000 are expiring today. Claim now by visiting: http://sbi-rewards-redeem.co and enter your card details and OTP. Failure to do so will result in permanent loss of points. - SBI Rewards",
+      "URGENT: Your SBI net banking access is suspended. Verify your identity now to avoid permanent closure by clicking here: http://sbi-kyc-verify.online/auth. Please use your PIN for faster verification."
+    ]
+  },
+  {
+    "campaign_id": "CAMP-NONEPERSO-PHISHING-001",
+    "primary_target_entity": "None (Personal Message)",
+    "scam_category": "phishing",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T10:02:14.238865+00:00",
+    "last_seen": "2026-02-21T10:02:14.238865+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "UPI"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [
+        "+911234567890",
+        "1478593265"
+      ],
+      "extracted_upis": [
+        "1478593265@sbi"
+      ]
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses the word 'URGENT' to create a sense of urgency and panic, while also inducing fear by mentioning a 'severe accident', aiming to prompt immediate action and override cautious decision-making.",
+      "gemini_policy_violations": "This message does not appear to be from a corporate entity, but rather a personal message. As such, there is no entity policy to validate against. The message is likely a scam or phishing attempt, but it does not violate any specific corporate policy.",
+      "primary_suspected_reason": "Violates None (Personal Message)'s official communication policy. High fear induction detected. Artificial urgency pressure applied. Matches pattern: phishing"
+    },
+    "raw_message_variants": [
+      "URGENT: My brother has a severe accident. So please send me the money to this mobile number +91 12345 67890 or send use this upi id 1478593265@sbi"
+    ]
+  }
+]

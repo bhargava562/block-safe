@@ -99,6 +99,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.error(f"Classifier initialization failed: {e}")
         raise
 
+    # Initialize Multi-Agent Swarm (LangGraph StateGraph)
+    try:
+        from app.core.agent_swarm import get_agent_swarm
+        get_agent_swarm()
+        logger.info("Multi-Agent Swarm (LangGraph) initialized")
+    except Exception as e:
+        logger.warning(f"Agent swarm initialization warning: {e}")
+
+    # Initialize Campaign Manager (Merging Intervals Engine)
+    try:
+        from app.core.campaign_manager import get_campaign_manager
+        mgr = get_campaign_manager()
+        mgr.load_campaigns()
+        logger.info(f"Campaign Manager initialized ({len(mgr.get_all_campaigns())} campaigns loaded)")
+    except Exception as e:
+        logger.warning(f"Campaign manager initialization warning: {e}")
+
     logger.info("BlockSafe API ready to accept requests")
 
     yield  # Application runs here

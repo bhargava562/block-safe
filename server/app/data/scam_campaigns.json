@@ -150,5 +150,30 @@
     "raw_message_variants": [
       "URGENT: My brother has a severe accident. So please send me the money to this mobile number +91 12345 67890 or send use this upi id 1478593265@sbi"
     ]
+  },
+  {
+    "campaign_id": "CAMP-UNKNOWN-MISC-001",
+    "primary_target_entity": "Unknown",
+    "scam_category": "Unknown",
+    "aggregated_scam_score": 0.0,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T10:26:27.319114+00:00",
+    "last_seen": "2026-02-21T10:26:27.319114+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "No significant manipulation tactics detected via heuristic analysis.",
+      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
+      "primary_suspected_reason": "Low risk indicators."
+    },
+    "raw_message_variants": [
+      "Hello world"
+    ]
   }
 ]

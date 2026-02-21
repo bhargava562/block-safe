@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------
     # 4. MODEL NAMES (read from env, sensible defaults)
     # -----------------------------------------------------------------
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-1.5-flash-latest"
     OPENAI_MODEL: str = "gpt-4o-mini"
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
 

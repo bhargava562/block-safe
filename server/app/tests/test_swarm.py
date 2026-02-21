@@ -5,8 +5,13 @@ import sys
 from fastapi.testclient import TestClient
 from app.main import app
 
+from app.config import get_settings
+from app.main import app
+
+# Fetch API key from configuration to avoid 401 in CI/different environments
+settings = get_settings()
 API_URL = "/api/v1"
-API_KEY = "D5N+u7NBbsYSPUkvWuVvpnUdIppxU2MtOwX2WmNzHZk="
+API_KEY = settings.API_AUTH_KEY.get_secret_value()
 HEADERS = {"X-API-KEY": API_KEY}
 
 @pytest.fixture

@@ -72,9 +72,9 @@ echo [OK] All dependencies installed
 
 REM ── 6. Verify critical imports ──────────────────────────────
 echo [..] Verifying critical imports...
-"%VENV_DIR%\Scripts\python.exe" -c "import fastapi, uvicorn, pydantic, langchain, numpy; print('[OK] Core imports verified')"
+"%VENV_DIR%\Scripts\python.exe" -c "import fastapi, uvicorn, pydantic, langchain, supabase, langchain_groq, langchain_openai; print('[OK] Core imports verified')"
 if errorlevel 1 (
-    echo ERROR: Import verification failed
+    echo ERROR: Import verification failed. Ensure internet connection or check constraints.
     exit /b 1
 )
 
@@ -91,8 +91,17 @@ echo.
 echo ============================================
 echo   Setup Complete!
 echo ============================================
-echo   Activate:  %VENV_DIR%\Scripts\activate
-echo   Run:       cd server ^& python run.py
-echo   Test:      cd server ^& python -m pytest app/tests/ -v
-echo   Docker:    docker compose up --build
+echo   Quick Start:
+echo   1. Activate:  %VENV_DIR%\Scripts\activate
+echo   2. Run:       cd server ^& python run.py
+echo.
+echo   Advanced:
+echo   - Test:       cd server ^& python -m pytest app/tests/ -v
+echo   - Docker:     docker compose up --build
+echo   - Guide:      Check postman_testing_guide.md for API testing
+echo.
+echo   REQUIRED KEYS (.env):
+echo   - GEMINI_API_KEY
+echo   - GROQ_API_KEY / DEEPSEEK_API_KEY (for fallback)
+echo   - SUPABASE_URL / SUPABASE_SERVICE_KEY (for state tracking)
 echo ============================================

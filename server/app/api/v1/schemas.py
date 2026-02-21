@@ -62,6 +62,15 @@ class ExtractedEntities(BaseModel):
     phone_numbers: list[str] = Field(default_factory=list, description="Extracted phone numbers")
 
 
+class PolicyViolation(BaseModel):
+    """Result of real-time policy fact-checking against official sources"""
+
+    entity: str = Field(..., description="Organization mentioned (e.g., 'SBI Bank')")
+    claimed_action: str = Field(..., description="What the message claims the entity requires")
+    verified_result: str = Field(..., description="Fact-check finding from official sources")
+    source_url: Optional[str] = Field(default=None, description="URL of the official source")
+
+
 class SSFProfile(BaseModel):
     """Scam Strategy Fingerprint - behavioral pattern analysis"""
 
@@ -90,6 +99,26 @@ class SSFProfile(BaseModel):
     strategy_summary: str = Field(
         default="",
         description="Human-readable summary of scam strategy"
+    )
+
+    # ── Multi-Agent Cognitive Scores (from Profiler Agent) ──
+    fear_score: float = Field(
+        default=0.0, ge=0.0, le=1.0,
+        description="Fear induction level from cognitive risk profiler (0-1)"
+    )
+    authority_score: float = Field(
+        default=0.0, ge=0.0, le=1.0,
+        description="Authority impersonation level from cognitive risk profiler (0-1)"
+    )
+    cognitive_risk_score: float = Field(
+        default=0.0, ge=0.0, le=1.0,
+        description="Aggregated cognitive manipulation risk score (0-1)"
+    )
+
+    # ── Policy Fact-Check (from Fact-Checker Agent) ──
+    policy_violation: Optional[PolicyViolation] = Field(
+        default=None,
+        description="Real-time policy verification result (null if no institutional claims)"
     )
 
 
@@ -214,6 +243,10 @@ class AnalysisResponse(BaseModel):
     operation_mode: Literal["shield", "honeypot"] = Field(
         ...,
         description="Mode used for this analysis"
+    )
+    provider_used: Optional[str] = Field(
+        default=None,
+        description="AI provider(s) that handled this request (e.g., 'openai_gemini_primary', 'groq_fallback_triggered')"
     )
 
     # Multi-Agent Intelligence (from LangGraph swarm)

@@ -1,13 +1,13 @@
 """
 BlockSafe Scam Detector Module
-Gemini-powered scam classification using google-genai
+Multi-agent scam classification with LangChain orchestration and Groq fallback.
 """
 
 import json
 import time
 import asyncio
 from typing import Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dc_field
 from copy import deepcopy
 
 from google import genai
@@ -26,13 +26,15 @@ class ClassificationResult:
     confidence: float
     scam_type: Optional[str]
     reasoning: str
-    extracted_entities: ExtractedData
+    extracted_entities: "ExtractedData" = None
+    agent_analysis: object = dc_field(default=None, repr=False)  # AgentAnalysis from multi-agent pipeline
 
 
 class ScamClassifier:
     """
-    Gemini-powered scam detection classifier.
-    Returns structured classification with confidence scores.
+    Multi-agent scam detection classifier.
+    Uses LangChain-powered Profiler + Fact-Checker agents with automatic Groq fallback.
+    Falls back to rule-based classification when all AI providers are unavailable.
     """
 
     _instance: Optional["ScamClassifier"] = None
@@ -107,14 +109,14 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
 
         except Exception as e:
             logger.error(f"Failed to configure Gemini: {e}")
-        except Exception as e:
-            logger.error(f"Failed to configure Gemini: {e}")
             ScamClassifier._configured = False
             # Do not raise here, allow app to start
 
     async def classify(self, message: str) -> ClassificationResult:
         """
-        Classify a message for scam detection.
+        Classify a message for scam detection using multi-agent pipeline.
+
+        Flow: entity extraction → rule pre-check → cache → run_agents() → result
 
         Args:
             message: The text message to analyze
@@ -126,22 +128,13 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
         extracted_entities = extract_all_entities(message)
         entity_count = count_entities(extracted_entities)
 
-        # Check configuration
-        if not self._configured or self._client is None:
-             # Try one more time to configure
-             self._configure()
-        
-        if not self._configured or self._client is None:
-            logger.error("Scam classifier not initialized, using rule-based fallback")
-            return self._rule_based_fallback(message, extracted_entities)
-
         # Check cache
         cached = self._get_cached(message)
         if cached:
             logger.debug("Classification cache hit")
             return deepcopy(cached)
 
-        # RULE-BASED PRE-CHECK: High-risk patterns
+        # RULE-BASED PRE-CHECK: High-risk patterns (instant, no API call)
         if self._has_critical_indicators(message, extracted_entities):
             logger.warning("Critical scam indicators detected via rules")
             result = ClassificationResult(
@@ -151,22 +144,65 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
                 reasoning="Critical indicators: Requests sensitive credentials or urgent payment",
                 extracted_entities=extracted_entities
             )
-            # Cache and return immediately
             self._set_cache(message, result)
             return result
 
+        # ── MULTI-AGENT PIPELINE ──────────────────────────────
         try:
-            # Get relevant patterns from dataset with LOWER threshold
+            from app.intelligence.agents import run_agents
+            agent_result = await run_agents(message)
+
+            # Map AgentAnalysis → ClassificationResult
+            reasoning_parts = []
+            if agent_result.profiler_reasoning:
+                reasoning_parts.append(f"Profiler: {agent_result.profiler_reasoning}")
+            if agent_result.fact_checker_reasoning:
+                reasoning_parts.append(f"Fact-Check: {agent_result.fact_checker_reasoning}")
+            if agent_result.policy_violation and agent_result.verified_result:
+                reasoning_parts.append(f"Policy Violation: {agent_result.verified_result}")
+
+            result = ClassificationResult(
+                is_scam=agent_result.is_scam,
+                confidence=agent_result.confidence,
+                scam_type=agent_result.scam_type,
+                reasoning=" | ".join(reasoning_parts) if reasoning_parts else "Multi-agent analysis complete",
+                extracted_entities=extracted_entities,
+                agent_analysis=agent_result,
+            )
+
+            # Calibrate confidence with entity evidence
+            result = self._calibrate_confidence(result, extracted_entities)
+
+            # Cache successful result
+            self._set_cache(message, result)
+
+            # Trigger async learning for high-confidence scams
+            if result.is_scam and result.confidence > 0.8:
+                asyncio.create_task(self._learn_pattern(message, result))
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Multi-agent classification failed: {e}")
+
+        # ── LEGACY GEMINI FALLBACK ────────────────────────────
+        # If multi-agent pipeline fails, fall back to direct Gemini API
+        if not self._configured or self._client is None:
+            self._configure()
+
+        if not self._configured or self._client is None:
+            logger.error("All AI providers unavailable, using rule-based fallback")
+            return self._rule_based_fallback(message, extracted_entities)
+
+        try:
             relevant_patterns = self.dataset_manager.find_similar_patterns(message, threshold=0.05)
-            
             context_str = "No specific consistent patterns found in database."
             if relevant_patterns:
                 context_str = "\n".join([
                     f"- Type: {p.scam_type}\n  Keywords: {', '.join(p.common_keywords)}\n  Description: {p.description}"
-                    for p in relevant_patterns[:3]  # Top 3 matches
+                    for p in relevant_patterns[:3]
                 ])
-            
-            # Build enhanced prompt
+
             prompt = self._build_prompt(message, context_str, extracted_entities)
 
             response = None
@@ -184,7 +220,7 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
                             response_mime_type="application/json"
                         )
                     )
-                    break 
+                    break
                 except Exception as e:
                     if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
                         if attempt < 4:
@@ -193,29 +229,22 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
                             await asyncio.sleep(wait_time)
                             continue
                     raise e
-            
+
             if response is None:
                 raise RuntimeError("Failed to get response after retries")
 
-            # Parse JSON response
-            logger.info(f"DEBUG: Raw Gemini Response: {response.text}")
             result = self._parse_response(response.text)
             result.extracted_entities = extracted_entities
-            
-            # Adjust confidence based on detected entities (risk calibration)
             result = self._calibrate_confidence(result, extracted_entities)
-            
-            # Cache successful result
             self._set_cache(message, result)
 
-            # Trigger async learning for high-confidence scams
             if result.is_scam and result.confidence > 0.8:
                 asyncio.create_task(self._learn_pattern(message, result))
 
             return result
 
         except Exception as e:
-            logger.error(f"Classification failed: {e}")
+            logger.error(f"Legacy Gemini fallback also failed: {e}")
             return self._rule_based_fallback(message, extracted_entities)
 
     def _has_critical_indicators(self, message: str, entities: ExtractedData) -> bool:

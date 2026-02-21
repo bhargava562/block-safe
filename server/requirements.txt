@@ -30,20 +30,15 @@ soundfile==0.12.1
 numpy==1.26.4
 
 # ---------------------------------------------------------
-# 4. WINDOWS OS INTERCEPTION
-# ---------------------------------------------------------
-winsdk==1.0.0b10
-
-# ---------------------------------------------------------
-# 5. HTTP, UTILITIES & SECURITY
+# 4. HTTP, UTILITIES & SECURITY
 # ---------------------------------------------------------
 requests==2.32.4  # Fixed CVE-2024-47081 (.netrc leak)
 python-dotenv==1.0.1
-anyio==4.6.2
+anyio==4.6.2.post1
 typing-extensions>=4.15.0
 
 # ---------------------------------------------------------
-# 6. TESTING (Dev Dependencies)
+# 5. TESTING (Dev Dependencies)
 # ---------------------------------------------------------
 pytest==8.3.4
 pytest-asyncio==0.24.0

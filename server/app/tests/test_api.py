@@ -96,13 +96,13 @@ class TestHealthEndpoint:
 class TestAuthentication:
     """Tests for API key authentication"""
 
-    def test_missing_api_key_returns_403(self, test_client):
-        """Request without API key should return 403"""
+    def test_missing_api_key_returns_401(self, test_client):
+        """Request without API key should return 401 (Unauthorized)"""
         response = test_client.post(
             "/api/v1/analyze/text",
             json={"message": "test message"}
         )
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_invalid_api_key_returns_401(self, test_client):
         """Request with invalid API key should return 401"""

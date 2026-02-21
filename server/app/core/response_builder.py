@@ -144,6 +144,13 @@ class ResponseBuilder:
         ai_feedback_model = None
         campaign_info_model = None
         effective_confidence = classification.confidence
+        provider_used = None
+
+        # Extract provider info from the agent_analysis on classification
+        if hasattr(classification, 'agent_analysis') and classification.agent_analysis is not None:
+            agent_analysis = classification.agent_analysis
+            if hasattr(agent_analysis, 'provider_used'):
+                provider_used = agent_analysis.provider_used
 
         if multi_agent_result:
             ai_feedback_model = AIFeedback(
@@ -179,6 +186,7 @@ class ResponseBuilder:
             agent_summary=agent_summary,
             evidence_level=evidence_level,
             operation_mode=mode,
+            provider_used=provider_used,
             ai_feedback=ai_feedback_model,
             campaign_info=campaign_info_model,
         )
@@ -302,7 +310,7 @@ class ResponseBuilder:
             parts.append(f"{confidence_level}-confidence scam detected.")
 
         # SSF summary
-        if ssf.strategy_summary and "Direct payment request" not in ssf.strategy_summary:
+        if ssf.strategy_summary and "No significant" not in ssf.strategy_summary:
             parts.append(ssf.strategy_summary)
 
         # Honeypot summary

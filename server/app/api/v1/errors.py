@@ -11,7 +11,7 @@ class AudioFileTooLargeError(HTTPException):
 
     def __init__(self, max_mb: int, actual_mb: float):
         super().__init__(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=413,
             detail=f"Audio file too large. Maximum allowed: {max_mb}MB, received: {actual_mb:.2f}MB"
         )
 

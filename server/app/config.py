@@ -84,6 +84,12 @@ class Settings(BaseSettings):
     MERGE_SIMILARITY_THRESHOLD: float = 0.6 # threshold for campaign merging (0-1)
 
     # -----------------------------------------------------------------
+    # 8. MULTI-AGENT ORCHESTRATION
+    # -----------------------------------------------------------------
+    COGNITIVE_RISK_THRESHOLD: float = 0.7   # risk_score threshold → scam intervention
+    AGENT_TIMEOUT_SECONDS: int = 15         # per-agent timeout for LangChain chains
+
+    # -----------------------------------------------------------------
     # VALIDATORS
     # -----------------------------------------------------------------
 

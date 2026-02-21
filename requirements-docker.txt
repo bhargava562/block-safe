@@ -1,38 +1,30 @@
-# BlockSafe Docker Dependencies
-# Synced with server/requirements.txt — 2026-02-21
+# BlockSafe Docker Dependencies (Optimized)
+# Updated: 2026-02-21
 
-# ---------------------------------------------------------
-# 1. CORE WEB FRAMEWORK (Strict Input Validation & Anti-XSS)
-# ---------------------------------------------------------
+# 1. Core Web Framework
 fastapi==0.129.0
 uvicorn[standard]==0.30.6
 pydantic==2.12.5
 pydantic-settings==2.5.2
 python-multipart==0.0.22
 
-# ---------------------------------------------------------
-# 2. AI & MULTI-AGENT ORCHESTRATION (LangChain / LangGraph)
-# ---------------------------------------------------------
-langchain==0.2.14
-langchain-core==0.2.34
-langgraph==0.2.14
-langchain-openai==0.1.22
-langchain-google-genai==1.0.8
-langchain-groq==0.1.9
+# 2. AI Orchestration
+langchain>=0.2.19
+langchain-core>=0.3.81
+langgraph>=0.3.0
+langchain-openai>=0.1.25
+langchain-google-genai>=1.0.8
+langchain-groq>=0.1.9
 google-genai>=1.0.0
 
-# ---------------------------------------------------------
-# 3. MULTIMODAL / AUDIO PROCESSING
-# ---------------------------------------------------------
+# 3. Audio Processing (Essential only)
 faster-whisper==1.0.3
 librosa==0.10.2.post1
 soundfile==0.12.1
 numpy==1.26.4
 
-# ---------------------------------------------------------
-# 4. HTTP, UTILITIES & SECURITY
-# ---------------------------------------------------------
-requests==2.32.4
+# 4. Utilities & Database
 python-dotenv==1.0.1
-anyio==4.6.2.post1
+supabase>=2.10.0
+requests==2.32.4
 typing-extensions>=4.15.0

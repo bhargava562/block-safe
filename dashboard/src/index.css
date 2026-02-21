@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-background text-zinc-100;
+}
+
+.glass {
+  @apply bg-zinc-900/50 backdrop-blur-md border border-zinc-800;
+}

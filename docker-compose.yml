@@ -1,0 +1,39 @@
+# ============================================================
+# BlockSafe Docker Compose — Local Development & Production
+# ============================================================
+# Usage:
+#   docker compose up --build        (foreground)
+#   docker compose up --build -d     (background)
+#   docker compose logs -f           (tail logs)
+#   docker compose down              (stop & remove)
+# ============================================================
+
+services:
+  blocksafe-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bhargava93099/blocksafe:latest
+    container_name: blocksafe-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - server/.env
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"

@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  lint-and-smoke:
+  lint-and-test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,3 +40,38 @@ jobs:
               assert response.status_code == 200, f"Health check failed: {response.status_code}"
               print("Health endpoint OK")
           PY
+
+      - name: Unit tests
+        run: python -m pytest app/tests/ -v --tb=short
+
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run vulnerability scan
+        run: pip-audit --strict --desc
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker build smoke test
+        run: docker build -t blocksafe:ci-test .

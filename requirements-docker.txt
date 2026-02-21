@@ -1,11 +1,38 @@
-# Minimal BlockSafe Dependencies for Docker
-fastapi==0.115.0
+# BlockSafe Docker Dependencies
+# Synced with server/requirements.txt — 2026-02-21
+
+# ---------------------------------------------------------
+# 1. CORE WEB FRAMEWORK (Strict Input Validation & Anti-XSS)
+# ---------------------------------------------------------
+fastapi==0.129.0
 uvicorn[standard]==0.30.6
-pydantic==2.9.2
+pydantic==2.12.5
 pydantic-settings==2.5.2
 python-multipart==0.0.22
-google-genai==1.4.0
+
+# ---------------------------------------------------------
+# 2. AI & MULTI-AGENT ORCHESTRATION (LangChain / LangGraph)
+# ---------------------------------------------------------
+langchain==0.2.14
+langchain-core==0.2.34
+langgraph==0.2.14
+langchain-openai==0.1.22
+langchain-google-genai==1.0.8
+langchain-groq==0.1.9
+google-genai>=1.0.0
+
+# ---------------------------------------------------------
+# 3. MULTIMODAL / AUDIO PROCESSING
+# ---------------------------------------------------------
+faster-whisper==1.0.3
+librosa==0.10.2.post1
+soundfile==0.12.1
+numpy==1.26.4
+
+# ---------------------------------------------------------
+# 4. HTTP, UTILITIES & SECURITY
+# ---------------------------------------------------------
 requests==2.32.4
 python-dotenv==1.0.1
-anyio==4.6.0
-typing-extensions==4.12.2
+anyio==4.6.2
+typing-extensions>=4.15.0

@@ -173,6 +173,12 @@ class AnalysisResponse(BaseModel):
         description="Honeypot engagement results (honeypot mode only)"
     )
 
+    # Honeypot engagement details
+    honeypot_response: Optional["HoneypotResponseDetails"] = Field(
+        default=None,
+        description="Detailed honeypot agent response and status"
+    )
+
     # Summary
     agent_summary: str = Field(..., description="AI-generated summary of the analysis")
     evidence_level: Literal["NONE", "LOW", "MEDIUM", "HIGH"] = Field(
@@ -211,6 +217,18 @@ class AnalysisResponse(BaseModel):
                     },
                     "voice_analysis": None,
                     "honeypot_result": None,
+                    "honeypot_response": {
+                        "content": "Oh my, I am so worried. How do I fix this?",
+                        "trust_score": 0.95,
+                        "alternate_content": "I don't understand, can you explain again?",
+                        "is_active": True,
+                        "total_extracted_entities": {
+                            "upi_ids": [],
+                            "bank_accounts": [],
+                            "urls": ["http://fake-bank.com"],
+                            "phone_numbers": []
+                        }
+                    },
                     "agent_summary": "High-confidence bank impersonation scam detected.",
                     "evidence_level": "HIGH",
                     "operation_mode": "shield"
@@ -218,6 +236,20 @@ class AnalysisResponse(BaseModel):
             ]
         }
     }
+
+
+class HoneypotResponseDetails(BaseModel):
+    """Detailed honeypot agent response and status"""
+    content: str = Field(..., description="The honeypot agent's reply text")
+    trust_score: float = Field(default=0.0, description="Trust score of the agent (simulated)")
+    alternate_content: Optional[str] = Field(default=None, description="Alternate reply text if switch needed")
+    
+    # Tone Analysis
+    scammer_tone: Optional[str] = Field(default=None, description="Detected tone of the scammer (e.g., Aggressive, Urgent)")
+    agent_tone: Optional[str] = Field(default=None, description="Adopted tone of the honeypot agent (e.g., Oblivious, Scared)")
+    
+    is_active: bool = Field(default=True, description="Is honeypot currently active")
+    total_extracted_entities: ExtractedEntities = Field(..., description="Accumulated extracted entities for this session")
 
 
 class HealthResponse(BaseModel):

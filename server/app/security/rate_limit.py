@@ -10,6 +10,7 @@ from collections import defaultdict
 
 from fastapi import HTTPException, Request, status, Depends
 from app.security.auth import verify_api_key
+from app.config import get_settings
 
 
 @dataclass
@@ -84,6 +85,12 @@ class RateLimiter:
         # Record this request
         record.minute_requests.append(now)
         record.hour_requests.append(now)
+
+        # Memory cap: evict oldest client if over max tracked clients
+        max_clients = get_settings().RATE_LIMIT_MAX_CLIENTS
+        if len(self._records) > max_clients:
+            oldest_client = next(iter(self._records))
+            del self._records[oldest_client]
 
     def get_remaining(self, client_id: str) -> Dict[str, int]:
         """Get remaining requests for a client"""

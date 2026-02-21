@@ -1,8 +1,9 @@
 """
 BlockSafe Main Application
-FastAPI application with lifespan management
+FastAPI application with lifespan management, concurrency guards, and config-driven CORS
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -11,17 +12,53 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette import status
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import get_settings
 from app.api.v1.routes import router as api_router, health_router
 from app.utils.logger import logger
 
 
+# ---------------------------------------------------------------------------
+# Concurrency-guard middleware
+# ---------------------------------------------------------------------------
+
+class ConcurrencyGuardMiddleware(BaseHTTPMiddleware):
+    """
+    Limits the number of concurrent in-flight requests to prevent resource
+    exhaustion (memory, file-descriptors, thread-pool starvation).
+    Bounded by config.MAX_CONCURRENT_REQUESTS.
+    """
+
+    def __init__(self, app, max_concurrent: int = 100):
+        super().__init__(app)
+        self._semaphore = asyncio.Semaphore(max_concurrent)
+        self._max = max_concurrent
+
+    async def dispatch(self, request: Request, call_next):
+        if not self._semaphore._value:  # all slots taken
+            logger.warning(f"Concurrency limit reached ({self._max})")
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": "Server is at capacity, please retry shortly",
+                    "type": "concurrency_limit"
+                },
+                headers={"Retry-After": "5"},
+            )
+        async with self._semaphore:
+            return await call_next(request)
+
+
+# ---------------------------------------------------------------------------
+# Lifespan
+# ---------------------------------------------------------------------------
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Application lifespan handler.
-    Initializes models and services at startup, cleans up at shutdown.
+    Initialises models and services at startup, cleans up at shutdown.
     """
     logger.info("BlockSafe API starting up...")
 
@@ -29,6 +66,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         settings = get_settings()
         logger.info("Configuration loaded successfully")
+        logger.info(f"  APP_ENV          = {settings.APP_ENV}")
+        logger.info(f"  LOG_LEVEL        = {settings.LOG_LEVEL}")
+        logger.info(f"  THREAD_POOL      = {settings.THREAD_POOL_WORKERS} workers")
+        logger.info(f"  CACHE_MAX        = {settings.CLASSIFICATION_CACHE_MAX}")
+        logger.info(f"  MAX_CONCURRENT   = {settings.MAX_CONCURRENT_REQUESTS}")
+        logger.info(f"  GEMINI_MODEL     = {settings.GEMINI_MODEL}")
+        if settings.has_openai:
+            logger.info(f"  OPENAI_MODEL     = {settings.OPENAI_MODEL}")
+        if settings.has_groq:
+            logger.info(f"  GROQ_MODEL       = {settings.GROQ_MODEL}")
     except Exception as e:
         logger.error(f"Configuration error: {e}")
         raise
@@ -56,11 +103,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield  # Application runs here
 
-    # Shutdown
+    # Shutdown — clean up thread pools to prevent leaked threads
     logger.info("BlockSafe API shutting down...")
+    try:
+        from app.intelligence.speech_to_text import WhisperTranscriber
+        if WhisperTranscriber._executor:
+            WhisperTranscriber._executor.shutdown(wait=False)
+        from app.intelligence.voice_analysis import VoiceAnalyzer
+        if VoiceAnalyzer._executor:
+            VoiceAnalyzer._executor.shutdown(wait=False)
+        logger.info("Thread pools shut down")
+    except Exception as e:
+        logger.warning(f"Thread pool cleanup warning: {e}")
 
 
+# ---------------------------------------------------------------------------
 # Create FastAPI application
+# ---------------------------------------------------------------------------
+
 app = FastAPI(
     title="BlockSafe API",
     description="""
@@ -90,17 +150,28 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware (configure as needed for production)
+# ---------------------------------------------------------------------------
+# Middleware (order matters: outermost runs first)
+# ---------------------------------------------------------------------------
+
+# 1. Concurrency guard — prevents resource exhaustion
+settings = get_settings()
+app.add_middleware(ConcurrencyGuardMiddleware, max_concurrent=settings.MAX_CONCURRENT_REQUESTS)
+
+# 2. CORS — driven by config.CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+# ---------------------------------------------------------------------------
 # Global exception handlers
+# ---------------------------------------------------------------------------
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     logger.warning(f"HTTPException: {exc.detail} | path={request.url.path}")
@@ -138,12 +209,18 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
+# ---------------------------------------------------------------------------
 # Include routers
+# ---------------------------------------------------------------------------
+
 app.include_router(api_router)
 app.include_router(health_router)
 
 
+# ---------------------------------------------------------------------------
 # Root endpoint
+# ---------------------------------------------------------------------------
+
 @app.get("/", tags=["Root"])
 async def root():
     """Root endpoint with API information"""

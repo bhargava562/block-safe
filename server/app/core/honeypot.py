@@ -4,6 +4,7 @@ Agentic intelligence extraction with bounded conversation and kill-switch logic
 """
 
 import json
+import asyncio
 from typing import Optional, List, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -82,8 +83,14 @@ SCAMMER'S MESSAGE:
 CONVERSATION HISTORY:
 {history}
 
-Respond as the confused elderly person. Keep response under 100 words. Try to extract more information naturally.
-Your response:"""
+Respond in JSON format with the following fields:
+- content: Your response as the confused elderly person (under 100 words).
+- trust_score: A float between 0.0 and 1.0 indicating how well you think you are fooling them.
+- alternate_content: An alternative response if the first one implies too much knowledge or is too aggressive.
+- scammer_tone: One word describing the scammer's current tone (e.g., Aggressive, Urgent, Friendly).
+- agent_tone: One word describing your adopted tone (e.g., Oblivious, Scared, Curious).
+
+JSON Response:"""
 
     SHIELD_RESPONSE = """I appreciate you reaching out, but I need to verify this through official channels. 
 I'll contact my bank directly using the number on my card. Thank you for your concern."""
@@ -112,7 +119,10 @@ I'll contact my bank directly using the number on my card. Thank you for your co
 
         except Exception as e:
             logger.error(f"Failed to configure honeypot: {e}")
-            raise RuntimeError(f"Honeypot configuration failed: {e}")
+        except Exception as e:
+            logger.error(f"Failed to configure honeypot: {e}")
+            HoneypotAgent._configured = False
+            # Do not raise here, allow app to start
 
     async def engage(
         self,
@@ -135,8 +145,23 @@ I'll contact my bank directly using the number on my card. Thank you for your co
         """
         settings = get_settings()
 
+        # Check configuration
+        if not self._configured:
+             self._configure()
+             if not self._configured:
+                logger.error("Honeypot agent not configured, defaulting to shield mode")
+                return HoneypotResult(
+                    engaged=False,
+                    turns_completed=0,
+                    termination_reason=TerminationReason.ERROR,
+                    all_entities=initial_entities,
+                    conversation_summary="Honeypot unavailable (configuration error).",
+                    conversation_history=[]
+                )
+
         # Shield mode - no engagement
         if mode == "shield":
+
             return HoneypotResult(
                 engaged=False,
                 turns_completed=0,
@@ -146,7 +171,7 @@ I'll contact my bank directly using the number on my card. Thank you for your co
                 conversation_history=[]
             )
 
-        # Honeypot mode - active engagement
+
         return await self._run_honeypot(
             initial_message=initial_message,
             initial_entities=initial_entities,
@@ -190,19 +215,32 @@ I'll contact my bank directly using the number on my card. Thank you for your co
 
                 # Generate agent response
                 history_str = self._format_history(conversation_history)
-                response = await self._generate_response(current_message, history_str)
+                response_data = await self._generate_response(current_message, history_str)
+                
+                response_content = response_data.get("content", "")
+                trust_score = response_data.get("trust_score", 0.0)
+                alternate_content = response_data.get("alternate_content", "")
+                scammer_tone = response_data.get("scammer_tone", "Unknown")
+                agent_tone = response_data.get("agent_tone", "Neutral")
 
                 # Extract entities from this turn
-                turn_entities = extract_all_entities(current_message + " " + response)
+                turn_entities = extract_all_entities(current_message + " " + response_content)
                 all_entities = merge_entities(all_entities, turn_entities)
 
                 # Record turn
-                conversation_history.append(HoneypotTurn(
+                turn_obj = HoneypotTurn(
                     turn_number=turn,
                     scammer_message=current_message,
-                    agent_response=response,
+                    agent_response=response_content,
                     entities_extracted=turn_entities
-                ))
+                )
+                # Attach extra data 
+                turn_obj.trust_score = trust_score
+                turn_obj.alternate_content = alternate_content
+                turn_obj.scammer_tone = scammer_tone
+                turn_obj.agent_tone = agent_tone
+                
+                conversation_history.append(turn_obj)
 
                 # Check progress (kill-switch)
                 current_entity_count = count_entities(all_entities)
@@ -232,6 +270,13 @@ I'll contact my bank directly using the number on my card. Thank you for your co
                 # Simulate next scammer message (in real scenario, this would come from external source)
                 # For evaluation, we complete after generating our response
                 current_message = ""  # Would be next scammer input
+                
+                # BREAK after 1 turn for now effectively, since we don't have a scammer simulator
+                # asking for 'next input'. In a real chat loop, this function would be called once per message.
+                # But the loop structure suggests internal simulation. 
+                # Given current_message becomes empty, the next loop likely fails or does nothing?
+                if not current_message:
+                    break
 
             except Exception as e:
                 logger.error(f"Honeypot turn {turn} error: {e}")
@@ -249,8 +294,9 @@ I'll contact my bank directly using the number on my card. Thank you for your co
             TerminationReason.MAX_TURNS_REACHED
         )
 
-    async def _generate_response(self, scammer_message: str, history: str) -> str:
+    async def _generate_response(self, scammer_message: str, history: str) -> dict:
         """Generate honeypot response using Gemini"""
+        
         if self._client is None:
             raise RuntimeError("Honeypot model not initialized")
 
@@ -260,17 +306,76 @@ I'll contact my bank directly using the number on my card. Thank you for your co
             history=history or "No previous conversation"
         )
 
-        response = await self._client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.7,
-                top_p=0.95,
-                max_output_tokens=256,
-            )
-        )
+        response = None
+        retry_delay = 5
+        for attempt in range(5):
+            try:
+                response = await self._client.aio.models.generate_content(
+                    model=settings.GEMINI_MODEL,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        top_p=0.95,
+                        max_output_tokens=512,
+                        response_mime_type="application/json"
+                    )
+                )
+                break
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    if attempt < 4:
+                        wait_time = retry_delay * (2 ** attempt)
+                        logger.warning(f"Rate limited (429), retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                logger.error(f"Gemini API error (attempt {attempt}): {e}")
+        
+        if response is None:
+             logger.error("Failed to get honeypot response after retries, using fallback")
+             return self._get_fallback_response()
 
-        return response.text.strip()
+        try:
+            text = response.text.strip()
+            # Remove markdown fences
+            if "```" in text:
+                 text = text.replace("```json", "").replace("```", "")
+            
+            # Find JSON object boundaries
+            start = text.find("{")
+            end = text.rfind("}")
+            
+            if start != -1 and end != -1:
+                text = text[start:end+1]
+            
+            return json.loads(text)
+        except json.JSONDecodeError:
+            # Fallback if JSON is malformed
+            return {
+                "content": response.text.strip(),
+                "trust_score": 0.5,
+                "alternate_content": None,
+                "scammer_tone": "Unknown",
+                "agent_tone": "Neutral"
+            }
+
+    def _get_fallback_response(self) -> dict:
+        """Provide safe fallback response when AI fails"""
+        import random
+        safe_responses = [
+            "I'm not sure I understand. Can you explain that again?",
+            "My grandson usually handles this. What do I need to do?",
+            "Is there a website I can visit to check this?",
+            "I'm a bit confused. Who is this again?",
+            "Can you tell me more about how this works?",
+            "I want to help, but I'm not good with these things. What is the first step?"
+        ]
+        return {
+            "content": random.choice(safe_responses),
+            "trust_score": 0.3,
+            "alternate_content": "Please verify your identity.",
+            "scammer_tone": "Unknown",
+            "agent_tone": "Confused"
+        }
 
     def _format_history(self, history: List[HoneypotTurn]) -> str:
         """Format conversation history for prompt"""

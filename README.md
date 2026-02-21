@@ -145,14 +145,37 @@ curl -X GET http://localhost:8000/api/v1/dataset/stats \
 
 ### Environment Variables
 ```bash
-# Required
+# ─── Required ───
 GEMINI_API_KEY=your-gemini-api-key
 API_AUTH_KEY=your-secure-api-key
 
-# Optional
+# ─── AI Providers (optional multi-provider) ───
+OPENAI_API_KEY=your-openai-key
+GROQ_API_KEY=your-groq-key
+GEMINI_MODEL=gemini-2.5-flash      # default model
+OPENAI_MODEL=gpt-4o-mini
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# ─── Audio ───
 MAX_AUDIO_MB=10
+WHISPER_MODEL_SIZE=base
+
+# ─── Honeypot ───
 HONEYPOT_MAX_TURNS=5
 HONEYPOT_CONFIDENCE_THRESHOLD=0.85
+
+# ─── Performance Tuning ───
+CLASSIFICATION_CACHE_MAX=256        # bounded LRU cache
+CLASSIFICATION_CACHE_TTL=300        # cache TTL seconds
+MAX_CONCURRENT_REQUESTS=100         # concurrency semaphore
+THREAD_POOL_WORKERS=4               # audio processing threads
+REQUEST_TIMEOUT_SECONDS=30
+RATE_LIMIT_MAX_CLIENTS=10000        # memory-safe rate limiter
+
+# ─── Application ───
+APP_ENV=production                  # development | testing | production
+LOG_LEVEL=INFO                      # DEBUG | INFO | WARNING | ERROR
+CORS_ORIGINS=*                      # comma-separated origins
 ```
 
 ### Supported Scam Types
@@ -241,13 +264,30 @@ curl -X POST http://localhost:8000/api/v1/analyze/text \
 
 ## 📦 Deployment
 
-### Docker Production
+### Docker Compose (Recommended)
 ```bash
-# Build
+# Start with build
+docker compose up --build
+
+# Background mode
+docker compose up --build -d
+
+# Tail logs
+docker compose logs -f
+
+# Shutdown
+docker compose down
+```
+
+Docker Compose includes resource limits (2 GB memory, 2 CPUs), health checks, and automatic restarts.
+
+### Docker Manual
+```bash
+# Build multi-stage image
 docker build -t blocksafe:latest .
 
 # Run with environment file
-docker run -d -p 8000:8000 --env-file .env blocksafe:latest
+docker run -d -p 8000:8000 --env-file server/.env blocksafe:latest
 
 # Run with inline environment
 docker run -d -p 8000:8000 \
@@ -256,20 +296,13 @@ docker run -d -p 8000:8000 \
   blocksafe:latest
 ```
 
-### IntelliJ IDEA Setup
-1. **Run Configuration**: Docker → Image
-2. **Image**: `blocksafe:latest`
-3. **Port**: `8000:8000`
-4. **Environment Variables**: Set GEMINI_API_KEY and API_AUTH_KEY
-5. **Run Options**: `--rm`
-
 ### Health Monitoring
 ```bash
-# Check container status
+# Check container status (includes HEALTHCHECK)
 docker ps
 
 # View logs
-docker logs blocksafe-container
+docker compose logs -f blocksafe-api
 
 # Health endpoint
 curl http://localhost:8000/health

@@ -1,6 +1,6 @@
 """
 BlockSafe Logger Utility
-Structured logging configuration
+Structured logging configuration driven by config.LOG_LEVEL
 """
 
 import logging
@@ -10,7 +10,7 @@ from typing import Optional
 
 def setup_logger(
     name: str = "blocksafe",
-    level: int = logging.INFO,
+    level: Optional[int] = None,
     log_format: Optional[str] = None
 ) -> logging.Logger:
     """
@@ -18,27 +18,37 @@ def setup_logger(
 
     Args:
         name: Logger name
-        level: Logging level
+        level: Logging level (auto-detected from config if None)
         log_format: Custom format string
 
     Returns:
         Configured logger instance
     """
+    # Auto-detect level from config if not explicitly provided
+    if level is None:
+        try:
+            from app.config import get_settings
+            level = getattr(logging, get_settings().LOG_LEVEL, logging.INFO)
+        except Exception:
+            level = logging.INFO  # safe fallback during startup
+
     if log_format is None:
         log_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+    log = logging.getLogger(name)
+    log.setLevel(level)
 
-    # Avoid duplicate handlers
-    if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(level)
-        formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    # Clear existing handlers to prevent duplication/misconfiguration
+    if log.hasHandlers():
+        log.handlers.clear()
 
-    return logger
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(level)
+    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+
+    return log
 
 
 # Default application logger

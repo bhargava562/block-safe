@@ -7,7 +7,12 @@
       "scam_id": "SCAM_FIN_001",
       "category": "Banking & Finance",
       "scam_type": "Bank Account Freeze Scam",
-      "channels": ["call", "sms", "whatsapp", "email"],
+      "channels": [
+        "call",
+        "sms",
+        "whatsapp",
+        "email"
+      ],
       "description": "Victim is told their bank account will be frozen unless immediate action is taken.",
       "common_keywords": [
         "account blocked",
@@ -28,7 +33,11 @@
       "scam_id": "SCAM_FIN_002",
       "category": "Digital Payments",
       "scam_type": "UPI Collect Request Scam",
-      "channels": ["upi", "call", "whatsapp"],
+      "channels": [
+        "upi",
+        "call",
+        "whatsapp"
+      ],
       "description": "Victim is tricked into approving a UPI collect request believing they will receive money.",
       "common_keywords": [
         "receive money",
@@ -48,7 +57,12 @@
       "scam_id": "SCAM_JOB_001",
       "category": "Job & Employment",
       "scam_type": "Fake Job Offer Scam",
-      "channels": ["email", "whatsapp", "telegram", "linkedin"],
+      "channels": [
+        "email",
+        "whatsapp",
+        "telegram",
+        "linkedin"
+      ],
       "description": "Fake recruiters offer high-paying jobs with minimal qualifications.",
       "common_keywords": [
         "work from home",
@@ -68,7 +82,12 @@
       "scam_id": "SCAM_ROM_001",
       "category": "Romance & Social Engineering",
       "scam_type": "Romance Investment Scam",
-      "channels": ["instagram", "facebook", "dating_apps", "telegram"],
+      "channels": [
+        "instagram",
+        "facebook",
+        "dating_apps",
+        "telegram"
+      ],
       "description": "Scammer builds emotional relationship and later pushes victim into fake investments.",
       "common_keywords": [
         "trust me",
@@ -88,7 +107,11 @@
       "scam_id": "SCAM_TECH_001",
       "category": "Tech Support",
       "scam_type": "Fake Tech Support Scam",
-      "channels": ["call", "popup", "browser"],
+      "channels": [
+        "call",
+        "popup",
+        "browser"
+      ],
       "description": "Victim is told their device is infected and asked to pay for support.",
       "common_keywords": [
         "virus detected",
@@ -108,7 +131,11 @@
       "scam_id": "SCAM_CRYPTO_001",
       "category": "Crypto & Investment",
       "scam_type": "Pump and Dump Scheme",
-      "channels": ["telegram", "discord", "twitter"],
+      "channels": [
+        "telegram",
+        "discord",
+        "twitter"
+      ],
       "description": "Groups promote unknown crypto tokens promising guaranteed returns.",
       "common_keywords": [
         "guaranteed profit",
@@ -127,7 +154,11 @@
       "scam_id": "SCAM_GOV_001",
       "category": "Government & Authority",
       "scam_type": "Fake Legal Notice Scam",
-      "channels": ["email", "call", "sms"],
+      "channels": [
+        "email",
+        "call",
+        "sms"
+      ],
       "description": "Scammer impersonates police, court, or tax authority.",
       "common_keywords": [
         "legal action",
@@ -143,10 +174,43 @@
       "risk_level": "high"
     },
     {
+      "scam_id": "SCAM_CYBER_001",
+      "category": "Cyber Crime & Authority",
+      "scam_type": "Digital Arrest Scam",
+      "channels": [
+        "call",
+        "video_call",
+        "whatsapp",
+        "skype"
+      ],
+      "description": "Victims are coerced into staying on a video call (virtual arrest) by fake law enforcement claiming involvement in money laundering or drug trafficking.",
+      "common_keywords": [
+        "digital arrest",
+        "virtual arrest",
+        "CBI officer",
+        "narcotics",
+        "money laundering",
+        "stay on camera",
+        "do not disconnect",
+        "police verification"
+      ],
+      "behavioral_patterns": [
+        "isolates victim",
+        "demands continuous video focus",
+        "shows fake police station background",
+        "transfer funds for verification"
+      ],
+      "risk_level": "critical"
+    },
+    {
       "scam_id": "SCAM_ECOM_001",
       "category": "E-Commerce",
       "scam_type": "Fake Order / Refund Scam",
-      "channels": ["call", "sms", "email"],
+      "channels": [
+        "call",
+        "sms",
+        "email"
+      ],
       "description": "Victim is contacted about a fake order or refund to extract payment info.",
       "common_keywords": [
         "order cancelled",
@@ -165,12 +229,14 @@
       "scam_id": "SCAM_AI_001",
       "category": "AI & Deepfake",
       "scam_type": "Voice Deepfake Scam",
-      "channels": ["call"],
+      "channels": [
+        "call"
+      ],
       "description": "AI-generated voice mimics a known person requesting urgent money.",
       "common_keywords": [
         "emergency",
         "need money now",
-        "don't tell anyone",
+        "don’t tell anyone",
         "trust me"
       ],
       "behavioral_patterns": [

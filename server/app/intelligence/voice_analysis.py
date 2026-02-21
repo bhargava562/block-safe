@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, List
 from dataclasses import dataclass
 
+from app.config import get_settings
 from app.utils.logger import logger
 
 
@@ -27,9 +28,19 @@ class VoiceAnalyzer:
     """
     Analyzes audio features to detect urgency and patterns.
     Feeds into Scam Strategy Fingerprint (SSF).
+    Thread pool is bounded via config.THREAD_POOL_WORKERS to prevent resource exhaustion.
     """
 
-    _executor = ThreadPoolExecutor(max_workers=2)
+    _executor: ThreadPoolExecutor = None  # lazy-init from config
+
+    @classmethod
+    def _get_executor(cls) -> ThreadPoolExecutor:
+        """Lazy-init thread pool from config (bounded, no leak)."""
+        if cls._executor is None:
+            workers = get_settings().THREAD_POOL_WORKERS
+            cls._executor = ThreadPoolExecutor(max_workers=workers)
+            logger.info(f"VoiceAnalyzer thread pool created: {workers} workers")
+        return cls._executor
 
     def _analyze_sync(self, audio_path: str, transcript: str) -> VoiceSignals:
         """
@@ -147,9 +158,9 @@ class VoiceAnalyzer:
             tmp_path = tmp_file.name
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             signals = await loop.run_in_executor(
-                self._executor,
+                self._get_executor(),
                 self._analyze_sync,
                 tmp_path,
                 transcript

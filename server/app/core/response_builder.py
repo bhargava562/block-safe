@@ -12,6 +12,7 @@ from app.api.v1.schemas import (
     ExtractedEntities,
     SSFProfile,
     VoiceAnalysisResult,
+    HoneypotResponseDetails,
     HoneypotResult as HoneypotResponseModel
 )
 from app.core.scam_detector import ClassificationResult
@@ -80,8 +81,44 @@ class ResponseBuilder:
 
         # Build honeypot result (if applicable)
         honeypot_response = None
-        if honeypot_result and honeypot_result.engaged:
-            honeypot_response = HoneypotResponseModel(
+        if honeypot_result and honeypot_result.engaged and honeypot_result.conversation_history:
+             last_turn = honeypot_result.conversation_history[-1]
+             
+             # Extract attributes we attached dynamically
+             trust_score = getattr(last_turn, "trust_score", 0.0)
+             alternate_content = getattr(last_turn, "alternate_content", None)
+             scammer_tone = getattr(last_turn, "scammer_tone", None)
+             agent_tone = getattr(last_turn, "agent_tone", None)
+             
+             honeypot_response = HoneypotResponseDetails(
+                 content=last_turn.agent_response,
+                 trust_score=trust_score,
+                 alternate_content=alternate_content,
+                 scammer_tone=scammer_tone,
+                 agent_tone=agent_tone,
+                 is_active=honeypot_result.engaged,
+                 total_extracted_entities=ResponseBuilder._entities_to_model(honeypot_result.all_entities)
+             )
+        
+        # Legacy HoneypotResult mapping (if needed, but AnalysisResponse uses honeypot_result field directly with the core model)
+        # The schema uses HoneypotResult from schemas.py which matches app.core.honeypot.HoneypotResult structure partially?
+        # api/v1/schemas.py defines HoneypotResult.
+        # core/honeypot.py defines HoneypotResult.
+        # They seem to be different classes with same name?
+        # schemas.py: 
+        # class HoneypotResult(BaseModel): ...
+        # core/honeypot.py:
+        # @dataclass class HoneypotResult: ...
+        
+        # ResponseBuilder imports HoneypotResult from core.honeypot.
+        # But schemas.py has HoneypotResult model.
+        # And AnalysisResponse expects honeypot_result: Optional[HoneypotResult] (from schemas).
+        
+        # We need to convert core dataclass to schema model.
+        
+        honeypot_result_model = None
+        if honeypot_result:
+            honeypot_result_model = HoneypotResponseModel(
                 turns_completed=honeypot_result.turns_completed,
                 termination_reason=honeypot_result.termination_reason.value,
                 additional_entities=ResponseBuilder._entities_to_model(
@@ -112,7 +149,8 @@ class ResponseBuilder:
             extracted_entities=entities,
             ssf_profile=ssf_profile,
             voice_analysis=voice_analysis,
-            honeypot_result=honeypot_response,
+            honeypot_result=honeypot_result_model,
+            honeypot_response=honeypot_response,
             agent_summary=agent_summary,
             evidence_level=evidence_level,
             operation_mode=mode

@@ -59,6 +59,7 @@ async def analyze_text(
     - **mode**: "shield" (default) for protection only, "honeypot" for active extraction
     - **session_id**: Optional session ID for continuous chat (auto-generated if not provided)
     """
+
     request_id = str(uuid4())
     session_id = input_data.session_id or str(uuid4())
     log_request(request_id, "/analyze/text", input_data.mode)
@@ -88,6 +89,8 @@ async def analyze_text(
 
     # Step 3: Honeypot engagement (if applicable)
     honeypot_result = None
+    
+    
     if (
         classification.is_scam and
         classification.confidence >= settings.HONEYPOT_CONFIDENCE_THRESHOLD
@@ -98,6 +101,7 @@ async def analyze_text(
             initial_entities=classification.extracted_entities,
             request_id=request_id
         )
+    
 
     # Step 3.5: Update dataset with new patterns (async, non-blocking)
     if classification.is_scam and classification.confidence >= 0.8:

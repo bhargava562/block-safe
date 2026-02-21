@@ -18,11 +18,21 @@ class WhisperTranscriber:
     """
     Whisper-based speech-to-text transcriber.
     Uses singleton pattern to load model once at startup.
+    Thread pool is bounded via config.THREAD_POOL_WORKERS.
     """
 
     _instance: Optional["WhisperTranscriber"] = None
     _model = None
-    _executor = ThreadPoolExecutor(max_workers=2)
+    _executor: Optional[ThreadPoolExecutor] = None  # lazy-init from config
+
+    @classmethod
+    def _get_executor(cls) -> ThreadPoolExecutor:
+        """Lazy-init thread pool from config (bounded, no leak)."""
+        if cls._executor is None:
+            workers = get_settings().THREAD_POOL_WORKERS
+            cls._executor = ThreadPoolExecutor(max_workers=workers)
+            logger.info(f"WhisperTranscriber thread pool created: {workers} workers")
+        return cls._executor
 
     def __new__(cls) -> "WhisperTranscriber":
         if cls._instance is None:
@@ -105,9 +115,9 @@ class WhisperTranscriber:
 
         try:
             # Run transcription in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             transcript, metadata = await loop.run_in_executor(
-                self._executor,
+                self._get_executor(),
                 self._transcribe_sync,
                 tmp_path
             )

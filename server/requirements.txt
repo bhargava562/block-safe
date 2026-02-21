@@ -13,13 +13,16 @@ python-multipart==0.0.22  # Fixed CVE-2024-53981, CVE-2026-24486
 # ---------------------------------------------------------
 # 2. AI & MULTI-AGENT ORCHESTRATION (LangChain / LangGraph)
 # ---------------------------------------------------------
-langchain==0.2.14
-langchain-core==0.2.34
-langgraph==0.2.14
-langchain-openai==0.1.22
-langchain-google-genai==1.0.8
-langchain-groq==0.1.9
+langchain>=0.2.19
+langchain-core>=0.3.81
+langgraph>=0.3.0
+langgraph-checkpoint>=2.0.0
+langchain-openai>=0.1.25
+langchain-google-genai>=1.0.8
+langchain-groq>=0.1.9
+langchain-text-splitters>=0.3.9
 google-genai>=1.0.0
+protobuf>=5.29.6  # Fixes CVE-2026-0994 (DoS via Any nesting)
 
 # ---------------------------------------------------------
 # 3. MULTIMODAL / AUDIO PROCESSING

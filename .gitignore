@@ -8,6 +8,8 @@
 .env.production
 .env.staging
 server/.env
+bot/.env
+dashboard/.env
 
 # Keep .env.example (safe placeholder file)
 !.env.example
@@ -83,3 +85,18 @@ tmp/
 
 # ─── CI/CD ──────────────────────────────────────────────────
 .github/secrets/
+
+# ─── Node / Dashboard ────────────────────────────────────────
+dashboard/node_modules/
+dashboard/dist/
+dashboard/.env.local
+dashboard/.env.*.local
+dashboard/npm-debug.log*
+dashboard/yarn-debug.log*
+dashboard/yarn-error.log*
+dashboard/.pnpm-debug.log*
+
+# ─── Bot ────────────────────────────────────────────────────
+bot/venv/
+bot/__pycache__/
+bot/*.log

@@ -316,9 +316,122 @@ BlockSafe/
 │       └── main.py                  # Application entrypoint
 ├── Dockerfile                       # Multi-stage Docker build
 ├── docker-compose.yml               # Docker Compose with health checks
-├── setup.bat / setup.sh             # Dev environment setup scripts
-└── README.md                        # This file
+├── setup.bat / setup.sh             # BlockSafe: Agentic Scam Detection & Intelligence Swarm
+
+**Protecting users from financial scams through multi-agent AI detection and autonomous intelligence gathering.**
+
+BlockSafe is a unified, high-availability platform designed to identify, neutralize, and study financial scams (Phishing, Digital Arrest, Bank Impersonation, etc.) in real-time. By utilizing a "Distributed Intelligence Swarm," BlockSafe doesn't just block messages—it engages scammers as an autonomous honeypot to extract actionable threat intelligence.
+
+---
+
+## 🚀 Key Features
+
+*   **Multi-Agent Intelligence Swarm**: Orchestrated via **LangGraph**, utilizing a parallel/sequential chain of sub-agents (Cognitive Profiler, Policy Validator, Artifact Extractor) across Groq, DeepSeek, and Google Gemini.
+*   **Autonomous AI Honeypots**: Engages scammers in highly contextual, multi-turn conversations to extract UPI IDs, bank accounts, and psychological profiles.
+*   **Persistent Threat Continuity**: Integrated with **Supabase (PostgreSQL)** to maintain state across sessions, allowing the honeypot to "remember" and lead discussions.
+*   **Telegram Frontend**: A secure, asynchronous gateway for real-time user protection and intervention.
+*   **Admin Command Center**: A React-based dashboard for real-time threat monitoring, live conversation feeds, and analytics.
+*   **Autonomous Dataset Forge**: One-click generation of high-quality, multi-turn scam datasets in JSONL format for future LLM fine-tuning.
+*   **Production Infrastructure**: Fully containerized via **Docker** with optimized multi-stage builds.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    User([User/Judge]) -->|Suspected Scam| Bot[Telegram Bot]
+    Bot -->|API Request| Backend[FastAPI Backend]
+    
+    subgraph Swarm[Agent Intelligence Swarm]
+        Backend -->|Shield Mode| Classifier[Classifier Agent]
+        Classifier -->|Parallel| Profiler[Cognitive Profiler - Private LLM]
+        Classifier -->|Parallel| Validator[Policy Validator - Gemini Search]
+        Classifier -->|Parallel| Extractor[Artifact Extractor - Regex]
+    end
+    
+    Swarm -->|Risk Score > Threshold| Bot
+    Bot -->|User Confirms| Backend
+    
+    subgraph Honeypot[Autonomous Intelligence Gathering]
+        Backend -->|Honeypot Mode| AI_Agent[Groq/DeepSeek Agent]
+        AI_Agent <-->|Read/Write State| DB[(Supabase)]
+    end
+    
+    DB <-->|Live Stream| Dashboard[Admin Command Center]
+    Dashboard -->|Export| DatasetForge[ML Dataset Forge]
 ```
+
+---
+
+## 📂 Project Structure
+
+```text
+BlockSafe/
+├── server/             # FastAPI Backend (Intelligence Layer)
+│   ├── app/            # Core logic, Agents, & API
+│   ├── scripts/        # Diagnostic & Utility tools
+│   └── tests/          # Integration & Unit tests
+├── bot/                # Telegram Frontend (Asynchronous Gateway)
+├── dashboard/          # React Admin Command Center (Vite)
+├── Dockerfile          # Production-grade multi-stage build
+└── setup.bat           # Automated environment initializer
+```
+
+---
+
+## 🛠️ Quick Start
+
+### 1. Environment Configuration
+Copy `server/.env.example` to `server/.env` and fill in your credentials:
+```bash
+# Core AI Keys
+GEMINI_API_KEY=...
+GROQ_API_KEY=...
+DEEPSEEK_API_KEY=...
+
+# Backend State
+SUPABASE_URL=...
+SUPABASE_SERVICE_KEY=...
+```
+
+### 2. Automated Local Setup
+Run the setup script to initialize the virtual environment and install all dependencies:
+```powershell
+.\setup.bat
+```
+
+### 3. Docker Deployment
+To run the entire platform in a containerized environment:
+```bash
+docker compose up --build
+```
+
+---
+
+## 🖥️ Platform Components
+
+### Admin Command Center
+The React dashboard provides real-time access to the "Threat Matrix." It features real-time Supabase subscriptions, allowing admins to watch honeypot interactions as they happen.
+*   **Location**: `dashboard/`
+*   **Run**: `cd dashboard && npm start`
+
+### Autonomous Dataset Forge
+Built into the dashboard, this tool transforms neutralized scam transcripts into specialized datasets.
+*   **JSON**: Rich relational data for security regulators.
+*   **JSONL**: Formatted specifically for **OpenAI/HuggingFace Fine-Tuning**.
+
+---
+
+## ⚔️ Security & Privacy
+BlockSafe follows strict security protocols:
+*   **Secrets Management**: Zero keys are hardcoded; all configuration is handled via `.env` files (ignored by Git).
+*   **Non-Root Execution**: Docker containers run as a dedicated `blocksafe` user.
+*   **Input Sanitization**: Multi-layer regex and LLM validation used for IoC extraction.
+
+---
+
+**BlockSafe** — *Neutralizing scams through decentralized intelligence.*
 
 ---
 

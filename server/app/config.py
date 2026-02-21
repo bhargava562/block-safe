@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------
     # 2. REQUIRED SECRETS
     # -----------------------------------------------------------------
-    GEMINI_API_KEY: SecretStr
+    GEMINI_API_KEY: Optional[SecretStr] = None
     API_AUTH_KEY: SecretStr
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: Optional[SecretStr] = None

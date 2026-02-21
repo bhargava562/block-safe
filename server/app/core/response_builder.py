@@ -70,8 +70,9 @@ class ResponseBuilder:
             honeypot_result
         )
 
-        # Build SSF profile
-        ssf_profile = ResponseBuilder._build_ssf_profile(ssf)
+        # Build SSF profile (enriched with agent cognitive scores if available)
+        agent_analysis_data = getattr(classification, 'agent_analysis', None)
+        ssf_profile = ResponseBuilder._build_ssf_profile(ssf, agent_analysis=agent_analysis_data)
 
         # Build voice analysis (if applicable)
         voice_analysis = None
@@ -216,16 +217,54 @@ class ResponseBuilder:
         )
 
     @staticmethod
-    def _build_ssf_profile(ssf: SSFResult) -> SSFProfile:
-        """Convert SSFResult to Pydantic model"""
-        return SSFProfile(
+    def _build_ssf_profile(ssf: SSFResult, agent_analysis=None) -> SSFProfile:
+        """Convert SSFResult to Pydantic model, enriched with multi-agent cognitive scores"""
+        from app.api.v1.schemas import PolicyViolation
+
+        profile = SSFProfile(
             urgency_score=ssf.urgency_score,
             authority_claims=ssf.authority_claims,
             payment_escalation=ssf.payment_escalation,
             channel_switch_intent=ssf.channel_switch_intent,
             urgency_phrases=ssf.urgency_phrases,
-            strategy_summary=ssf.strategy_summary
+            strategy_summary=ssf.strategy_summary,
         )
+
+        # Enrich with multi-agent cognitive scores
+        if agent_analysis is not None:
+            profile.fear_score = getattr(agent_analysis, 'fear_score', 0.0)
+            profile.authority_score = getattr(agent_analysis, 'authority_score', 0.0)
+            profile.cognitive_risk_score = getattr(agent_analysis, 'cognitive_risk_score', 0.0)
+
+            # Merge urgency: take the higher of regex-based vs AI-derived
+            ai_urgency = getattr(agent_analysis, 'urgency_score', 0.0)
+            if ai_urgency > profile.urgency_score:
+                profile.urgency_score = round(ai_urgency, 2)
+
+            # Policy violation from Fact-Checker
+            if getattr(agent_analysis, 'policy_violation', False):
+                entity = getattr(agent_analysis, 'entity', None)
+                claimed = getattr(agent_analysis, 'claimed_action', None)
+                verified = getattr(agent_analysis, 'verified_result', None)
+                if entity and claimed and verified:
+                    profile.policy_violation = PolicyViolation(
+                        entity=entity,
+                        claimed_action=claimed,
+                        verified_result=verified,
+                        source_url=getattr(agent_analysis, 'source_url', None),
+                    )
+
+            # Enhance strategy summary with cognitive data
+            if profile.cognitive_risk_score >= 0.7:
+                cognitive_note = f"High cognitive risk ({profile.cognitive_risk_score:.1f})"
+                if profile.policy_violation:
+                    cognitive_note += " with known policy violation"
+                if profile.strategy_summary and "No significant" not in profile.strategy_summary:
+                    profile.strategy_summary = f"{profile.strategy_summary} {cognitive_note}."
+                else:
+                    profile.strategy_summary = f"{cognitive_note}."
+
+        return profile
 
     @staticmethod
     def _calculate_evidence_level(

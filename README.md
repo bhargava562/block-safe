@@ -3,16 +3,20 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://docker.com)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green)](https://fastapi.tiangolo.com)
 [![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-orange)](https://ai.google.dev)
+[![LangChain](https://img.shields.io/badge/LangChain-Multi--Agent-purple)](https://python.langchain.com/)
 
 > **Live API Endpoint**: `https://blocksafe-latest.onrender.com/api/v1/analyze/text`
 
 BlockSafe is a production-ready AI system for real-time scam detection and intelligence extraction. It provides both defensive (Shield) and intelligence gathering (Honeypot) capabilities with multi-modal analysis supporting text and audio inputs.
 
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker installed
+- Python 3.11+ or Docker installed
 - Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
+- (Optional) OpenAI API key, Groq API key for multi-agent mode
 
 ### 1. Clone Repository
 ```bash
@@ -41,6 +45,75 @@ docker run -d -p 8000:8000 \
 curl http://localhost:8000/health
 ```
 
+---
+
+## 🏗️ Multi-Agent Architecture
+
+BlockSafe uses a **two-tier multi-agent intelligence layer** powered by LangChain:
+
+### Tier 1: Classification Pipeline (`agents.py`)
+Called first by `scam_detector.classify()` for every incoming message:
+
+```
+                        ┌─────────────────────────┐
+                        │      run_agents()       │
+                        │   asyncio.gather()      │
+                        └─────────┬───────────────┘
+                    ┌─────────────┴─────────────┐
+                    ▼                           ▼
+          ┌─────────────────┐         ┌─────────────────┐
+          │  Profiler Agent │         │ Fact-Checker     │
+          │  ─────────────  │         │  ─────────────   │
+          │ OpenAI gpt-4o   │         │ Gemini Flash     │
+          │  ↓ fallback     │         │  ↓ fallback      │
+          │ Groq Llama-3.3  │         │ Groq Llama-3.3   │
+          │  ↓ fallback     │         │                   │
+          │ Heuristic rules │         │                   │
+          └────────┬────────┘         └────────┬──────────┘
+                   │                           │
+                   └─────────┬─────────────────┘
+                             ▼
+                   ┌─────────────────────┐
+                   │   AgentAnalysis     │
+                   │  ───────────────    │
+                   │ • fear_score        │
+                   │ • urgency_score     │
+                   │ • authority_score   │
+                   │ • cognitive_risk    │
+                   │ • policy_violation  │
+                   │ • provider_used     │
+                   └─────────────────────┘
+```
+
+| Agent | Primary Provider | Fallback | Purpose |
+|-------|-----------------|----------|---------|
+| **Profiler** | OpenAI `gpt-4o-mini` | Groq `llama-3.3-70b` → Heuristic | Detect urgency, fear induction, authority impersonation |
+| **Fact-Checker** | Gemini Flash | Groq `llama-3.3-70b` | Extract entities, verify claims against real policies |
+
+### Tier 2: Deep Analysis Swarm (`agent_swarm.py`)
+Called after classification for additional intelligence:
+
+- **CognitiveProfiler** — Emotional manipulation analysis
+- **PolicyValidator** — Real-world policy violation verification
+- **ArtifactExtractor** — IoC extraction (regex, no LLM)
+- **CampaignCluster** — Merging Intervals engine for threat campaign tracking
+- **DecisionSynthesis** — Final score aggregation
+
+### Quota Fallback & High Availability
+
+All LLM calls implement automatic failover:
+
+```
+Primary Provider (OpenAI / Gemini)
+    → Rate limit or error
+        → Groq Llama-3.3-70b (fallback)
+            → Heuristic rules (safety net)
+```
+
+The `provider_used` field in the API response tracks which path was taken (e.g., `openai+gemini`, `groq_fallback+groq_fallback`).
+
+---
+
 ## 📡 API Documentation
 
 ### Base URL
@@ -63,7 +136,7 @@ curl -X GET http://localhost:8000/health
 {
   "status": "healthy",
   "version": "1.0.0",
-  "timestamp": "2026-02-05T07:35:13Z"
+  "timestamp": "2026-02-21T11:30:00Z"
 }
 ```
 
@@ -73,9 +146,8 @@ curl -X POST http://localhost:8000/api/v1/analyze/text \
   -H "Content-Type: application/json" \
   -H "X-API-KEY: YOUR_API_KEY" \
   -d '{
-    "message": "Tell your 16 digits card number",
-    "mode": "shield",
-    "session_id": "optional-session-id"
+    "message": "SBI Bank Alert: Your account is restricted due to pending KYC. Update PAN immediately via sbi-kyc-update.info or your account will be blocked in 15 mins.",
+    "mode": "shield"
   }'
 ```
 
@@ -93,12 +165,12 @@ curl -X POST http://localhost:8000/api/v1/analyze/text \
 {
   "request_id": "uuid",
   "session_id": "uuid",
-  "timestamp": "2026-02-05T07:35:13Z",
+  "timestamp": "2026-02-21T11:30:06Z",
   "is_scam": true,
   "confidence": 0.95,
-  "scam_type": "card_fraud",
+  "scam_type": "bank_impersonation",
   "transcript": null,
-  "original_message": "Tell your 16 digits card number",
+  "original_message": "SBI Bank Alert: Your account is restricted...",
   "extracted_entities": {
     "upi_ids": [],
     "bank_accounts": [],
@@ -106,18 +178,39 @@ curl -X POST http://localhost:8000/api/v1/analyze/text \
     "phone_numbers": []
   },
   "ssf_profile": {
-    "urgency_score": 0.0,
-    "authority_claims": [],
+    "urgency_score": 0.9,
+    "authority_claims": ["Bank"],
     "payment_escalation": false,
     "channel_switch_intent": null,
-    "urgency_phrases": [],
-    "strategy_summary": "Direct payment request without advanced social-engineering patterns"
+    "urgency_phrases": ["immediately", "account will be blocked"],
+    "strategy_summary": "Impersonates: Bank. High cognitive risk (0.8) with known policy violation.",
+    "fear_score": 0.8,
+    "authority_score": 0.7,
+    "cognitive_risk_score": 0.8,
+    "policy_violation": {
+      "entity": "SBI Bank",
+      "claimed_action": "Update PAN immediately via sbi-kyc-update.info",
+      "verified_result": "SBI Bank does not send alerts with specific timeframes for account blocking, nor does it ask customers to update KYC via unofficial websites.",
+      "source_url": null
+    }
   },
   "voice_analysis": null,
   "honeypot_result": null,
-  "agent_summary": "High-confidence card fraud detected. Shield mode active: user protected without engagement.",
+  "agent_summary": "High-confidence bank impersonation detected.",
   "evidence_level": "HIGH",
-  "operation_mode": "shield"
+  "operation_mode": "shield",
+  "provider_used": "openai+gemini",
+  "ai_feedback": {
+    "openai_emotional_profile": "The message uses fear induction by threatening account blockage...",
+    "gemini_policy_violations": "SBI Bank does not ask customers to update KYC via unofficial websites...",
+    "primary_suspected_reason": "Violates SBI Bank's official communication policy."
+  },
+  "campaign_info": {
+    "campaign_id": "CAMP-SBI-BANKIMPER-005",
+    "is_new_campaign": false,
+    "total_attempts_tracked": 2,
+    "primary_target_entity": "SBI Bank"
+  }
 }
 ```
 
@@ -141,6 +234,14 @@ curl -X GET http://localhost:8000/api/v1/dataset/stats \
   -H "X-API-KEY: YOUR_API_KEY"
 ```
 
+#### Threat Campaigns
+```bash
+curl -X GET http://localhost:8000/api/v1/campaigns \
+  -H "X-API-KEY: YOUR_API_KEY"
+```
+
+---
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -149,12 +250,16 @@ curl -X GET http://localhost:8000/api/v1/dataset/stats \
 GEMINI_API_KEY=your-gemini-api-key
 API_AUTH_KEY=your-secure-api-key
 
-# ─── AI Providers (optional multi-provider) ───
+# ─── AI Providers (optional, enables multi-agent) ───
 OPENAI_API_KEY=your-openai-key
 GROQ_API_KEY=your-groq-key
-GEMINI_MODEL=gemini-2.5-flash      # default model
+GEMINI_MODEL=gemini-2.5-flash
 OPENAI_MODEL=gpt-4o-mini
 GROQ_MODEL=llama-3.3-70b-versatile
+
+# ─── Multi-Agent Tuning ───
+COGNITIVE_RISK_THRESHOLD=0.7       # risk_score threshold for scam intervention
+AGENT_TIMEOUT_SECONDS=15           # per-agent LLM call timeout
 
 # ─── Audio ───
 MAX_AUDIO_MB=10
@@ -178,38 +283,44 @@ LOG_LEVEL=INFO                      # DEBUG | INFO | WARNING | ERROR
 CORS_ORIGINS=*                      # comma-separated origins
 ```
 
-### Supported Scam Types
-- `card_fraud` - Credit/debit card information requests
-- `bank_impersonation` - Fake bank official communications
-- `upi_fraud` - UPI payment manipulation
-- `phishing` - Credential harvesting attempts
-- `government_impersonation` - Fake authority communications
-- `tech_support_scam` - Fake technical support
-- `investment_scam` - Fraudulent investment schemes
-- `romance_scam` - Relationship-based fraud
-- `job_scam` - Fake employment offers
+---
 
-### Evidence Levels
-- `NONE` - No risk indicators
-- `LOW` - Financial entities detected, no manipulation
-- `MEDIUM` - Moderate scam indicators
-- `HIGH` - Strong scam indicators with high confidence
+## 📁 Project Structure
 
-## 🏗️ Architecture
+```
+BlockSafe/
+├── server/
+│   └── app/
+│       ├── api/v1/
+│       │   ├── routes.py            # FastAPI endpoints
+│       │   ├── schemas.py           # Pydantic models (PolicyViolation, AIFeedback, CampaignInfo)
+│       │   └── errors.py            # Custom error handlers
+│       ├── core/
+│       │   ├── scam_detector.py     # Main classifier (calls run_agents → legacy Gemini → rules)
+│       │   ├── ssf_engine.py        # Scam Strategy Fingerprint (regex patterns)
+│       │   ├── agent_swarm.py       # LangGraph 5-agent swarm (deep analysis)
+│       │   ├── campaign_manager.py  # Merging Intervals threat campaign tracker
+│       │   ├── honeypot.py          # Controlled scammer engagement
+│       │   ├── response_builder.py  # Deterministic JSON response assembly
+│       │   ├── decision_engine.py   # Risk evaluation engine
+│       │   ├── dataset_manager.py   # Dynamic pattern loading
+│       │   └── dataset_updater.py   # Self-learning pattern updates
+│       ├── intelligence/
+│       │   ├── agents.py            # LangChain multi-agent pipeline (Profiler + Fact-Checker)
+│       │   ├── voice_analysis.py    # Voice signal analysis
+│       │   └── speech_to_text.py    # Whisper-based transcription
+│       ├── security/
+│       │   ├── rate_limit.py        # Rate limiting middleware
+│       │   └── auth.py              # API key authentication
+│       ├── config.py                # Pydantic settings with env loading
+│       └── main.py                  # Application entrypoint
+├── Dockerfile                       # Multi-stage Docker build
+├── docker-compose.yml               # Docker Compose with health checks
+├── setup.bat / setup.sh             # Dev environment setup scripts
+└── README.md                        # This file
+```
 
-### System Components
-- **FastAPI Server** - Async web framework with authentication
-- **Gemini AI** - Advanced language model for classification
-- **Entity Extraction** - Regex-based financial entity detection
-- **SSF Engine** - Scam Strategy Fingerprinting
-- **Honeypot Agent** - Controlled scammer engagement
-- **Dataset Manager** - Dynamic pattern learning
-
-### Performance Characteristics
-- **Text Analysis**: < 1 second average
-- **Audio Analysis**: < 30 seconds (including transcription)
-- **Concurrent Requests**: 100+ supported
-- **Rate Limiting**: 60 req/min per API key
+---
 
 ## 🛡️ Security Features
 
@@ -222,11 +333,14 @@ CORS_ORIGINS=*                      # comma-separated origins
 - Stateless design (no persistent storage)
 - Bounded honeypot execution
 - No sensitive data logging
+- API keys stored as `SecretStr` (never logged)
 
 ### Error Handling
-- Graceful degradation on AI failures
+- Three-tier fallback: Multi-agent → Legacy Gemini → Rule-based
 - Risk-based confidence calibration
 - Comprehensive error responses
+
+---
 
 ## 🧪 Testing
 
@@ -238,6 +352,14 @@ python -m pytest tests/ -v
 
 ### API Testing Examples
 
+**Bank Impersonation (Scam):**
+```bash
+curl -X POST http://localhost:8000/api/v1/analyze/text \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: YOUR_API_KEY" \
+  -d '{"message": "SBI Bank Alert: Your account is restricted due to pending KYC. Update PAN immediately via sbi-kyc-update.info or your account will be blocked in 15 mins.", "mode": "shield"}'
+```
+
 **Card Fraud Detection:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/analyze/text \
@@ -246,21 +368,37 @@ curl -X POST http://localhost:8000/api/v1/analyze/text \
   -d '{"message": "Please share your 16 digit card number and CVV"}'
 ```
 
-**UPI Fraud Detection:**
+**Benign Message (No Scam):**
 ```bash
 curl -X POST http://localhost:8000/api/v1/analyze/text \
   -H "Content-Type: application/json" \
   -H "X-API-KEY: YOUR_API_KEY" \
-  -d '{"message": "GPay Rs 500 to scammer@ybl immediately"}'
+  -d '{"message": "Hi, I wanted to confirm our meeting scheduled for tomorrow at 3 PM. Let me know if the time works."}'
 ```
 
-**Legitimate Payment Request:**
-```bash
-curl -X POST http://localhost:8000/api/v1/analyze/text \
-  -H "Content-Type: application/json" \
-  -H "X-API-KEY: YOUR_API_KEY" \
-  -d '{"message": "GPay the amount of 25 in this contact number 635352423"}'
-```
+### Supported Scam Types
+| Type | Description |
+|------|-------------|
+| `card_fraud` | Credit/debit card information requests |
+| `bank_impersonation` | Fake bank official communications |
+| `upi_fraud` | UPI payment manipulation |
+| `phishing` | Credential harvesting attempts |
+| `government_impersonation` | Fake authority communications |
+| `tech_support_scam` | Fake technical support scams |
+| `investment_scam` | Fraudulent investment schemes |
+| `romance_scam` | Relationship-based fraud |
+| `job_scam` | Fake employment offers |
+| `loan_scam` | Advance fee loan scams |
+
+### Evidence Levels
+| Level | Meaning |
+|-------|---------|
+| `NONE` | No risk indicators detected |
+| `LOW` | Financial entities detected, no manipulation |
+| `MEDIUM` | Moderate scam indicators present |
+| `HIGH` | Strong scam indicators with high confidence |
+
+---
 
 ## 📦 Deployment
 
@@ -289,24 +427,28 @@ docker build -t blocksafe:latest .
 # Run with environment file
 docker run -d -p 8000:8000 --env-file server/.env blocksafe:latest
 
-# Run with inline environment
+# Run with inline environment (multi-agent mode)
 docker run -d -p 8000:8000 \
   -e GEMINI_API_KEY=your-key \
   -e API_AUTH_KEY=your-key \
+  -e OPENAI_API_KEY=your-openai-key \
+  -e GROQ_API_KEY=your-groq-key \
   blocksafe:latest
 ```
 
 ### Health Monitoring
 ```bash
-# Check container status (includes HEALTHCHECK)
+# Health endpoint
+curl http://localhost:8000/health
+
+# Check container status
 docker ps
 
 # View logs
 docker compose logs -f blocksafe-api
-
-# Health endpoint
-curl http://localhost:8000/health
 ```
+
+---
 
 ## 🔄 Continuous Chat Sessions
 
@@ -332,6 +474,8 @@ curl -X POST http://localhost:8000/api/v1/analyze/text \
   }'
 ```
 
+---
+
 ## 📊 Monitoring & Analytics
 
 ### Dataset Statistics
@@ -341,11 +485,20 @@ curl -X GET http://localhost:8000/api/v1/dataset/stats \
   -H "X-API-KEY: YOUR_API_KEY"
 ```
 
+### Threat Campaign Tracking
+View all tracked scam campaigns:
+```bash
+curl -X GET http://localhost:8000/api/v1/campaigns \
+  -H "X-API-KEY: YOUR_API_KEY"
+```
+
 ### Response Analysis
-- **Evidence Levels**: Track risk distribution
-- **Confidence Scores**: Monitor detection accuracy
-- **Entity Extraction**: Analyze threat indicators
-- **Session Patterns**: Understand conversation flows
+- **Cognitive Risk Scores**: `fear_score`, `urgency_score`, `authority_score`
+- **Policy Violations**: Real-time entity verification against known policies
+- **Provider Tracking**: `provider_used` shows which AI engine handled the request
+- **Campaign Intelligence**: `campaign_info` links attempts to tracked threat campaigns
+
+---
 
 ## 🚨 Important Notes
 
@@ -356,16 +509,18 @@ curl -X GET http://localhost:8000/api/v1/dataset/stats \
 - Regularly update dependencies
 
 ### Limitations
-- Requires internet connection for Gemini API
+- Requires internet connection for AI provider APIs
 - Audio processing limited to 10MB files
 - Honeypot mode has built-in safety limits
-- Classification accuracy depends on training data
+- Classification accuracy depends on AI provider availability
 
 ### Support
 - Check logs for debugging: `docker logs blocksafe-container`
 - Verify API key validity and quotas
 - Ensure proper network connectivity
 - Review rate limiting if requests fail
+
+---
 
 ## 📄 License
 
@@ -381,4 +536,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**BlockSafe** - Protecting users from financial scams through advanced AI detection and intelligence gathering.
+**BlockSafe** — Protecting users from financial scams through multi-agent AI detection and intelligence gathering.

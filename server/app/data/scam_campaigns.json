@@ -225,5 +225,105 @@
     "raw_message_variants": [
       "Hello world"
     ]
+  },
+  {
+    "campaign_id": "CAMP-SBI-MISC-003",
+    "primary_target_entity": "SBI Bank",
+    "scam_category": "Unknown",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T11:21:17.509888+00:00",
+    "last_seen": "2026-02-21T11:21:17.509888+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses fear induction by threatening account blockage, creates a sense of urgency with a time constraint, and impersonates authority by claiming to be from SBI Bank, aiming to prompt immediate action from the recipient.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. The use of a third-party website (sbi-kyc-update.info) for updating PAN is suspicious and likely a phishing attempt. Additionally, SBI Bank's official policy is to provide customers with sufficient time to complete KYC updates, and threatening to block the account in 15 minutes is not a standard practice.",
+      "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present"
+    },
+    "raw_message_variants": [
+      "SBI Bank Alert: Your account is restricted due to pending KYC. Update PAN immediately via sbi-kyc-update.info or your account will be blocked in 15 mins."
+    ]
+  },
+  {
+    "campaign_id": "CAMP-SBI-MISC-004",
+    "primary_target_entity": "SBI Bank",
+    "scam_category": "Unknown",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T11:23:15.466640+00:00",
+    "last_seen": "2026-02-21T11:23:15.466640+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses fear induction by threatening account blockage, creates a sense of urgency with a time constraint, and impersonates authority by claiming to be from SBI Bank, aiming to prompt immediate action from the recipient.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. The use of a third-party website (sbi-kyc-update.info) for updating PAN is suspicious and may be a phishing attempt. Additionally, SBI Bank's official policy is to provide customers with sufficient time to complete KYC updates, and threatening to block the account in 15 minutes is not a standard practice.",
+      "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present"
+    },
+    "raw_message_variants": [
+      "SBI Bank Alert: Your account is restricted due to pending KYC. Update PAN immediately via sbi-kyc-update.info or your account will be blocked in 15 mins."
+    ]
+  },
+  {
+    "campaign_id": "CAMP-SBI-BANKIMPER-005",
+    "primary_target_entity": "SBI Bank",
+    "scam_category": "bank_impersonation",
+    "aggregated_scam_score": 0.95,
+    "total_attempts_tracked": 2,
+    "first_seen": "2026-02-21T11:29:02.323289+00:00",
+    "last_seen": "2026-02-21T11:30:02.922362+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message uses fear induction by threatening account blockage, creates a sense of urgency with a time constraint, and impersonates authority by claiming to be from SBI Bank, aiming to prompt immediate action from the recipient.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. The use of a third-party website (sbi-kyc-update.info) for updating PAN information is suspicious and likely a phishing attempt. Additionally, SBI Bank's official policy is to provide customers with sufficient time to complete KYC updates, and threatening to block the account in 15 minutes is not a standard practice.",
+      "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: bank_impersonation"
+    },
+    "raw_message_variants": [
+      "SBI Bank Alert: Your account is restricted due to pending KYC. Update PAN immediately via sbi-kyc-update.info or your account will be blocked in 15 mins."
+    ]
+  },
+  {
+    "campaign_id": "CAMP-UNKNOWNUN-MISC-001",
+    "primary_target_entity": "Unknown/Unspecified",
+    "scam_category": "Unknown",
+    "aggregated_scam_score": 0.07,
+    "total_attempts_tracked": 1,
+    "first_seen": "2026-02-21T11:31:04.669805+00:00",
+    "last_seen": "2026-02-21T11:31:04.669805+00:00",
+    "threat_artifacts": {
+      "channels_used": [
+        "SMS"
+      ],
+      "extracted_links": [],
+      "extracted_phones": [],
+      "extracted_upis": []
+    },
+    "ai_feedback": {
+      "openai_emotional_profile": "The message creates a mild sense of urgency by mentioning a specific meeting time, but it is polite and considerate, without attempting to induce fear or impersonate authority.",
+      "gemini_policy_violations": "The message appears to be a personal or professional communication and does not claim to be from a specific entity. The required action is a common and legitimate request for confirmation, and there is no apparent policy violation.",
+      "primary_suspected_reason": "Low risk indicators."
+    },
+    "raw_message_variants": [
+      "Hi, I wanted to confirm our meeting scheduled for tomorrow at 3 PM at the office. Let me know if the time works for you."
+    ]
   }
 ]

@@ -83,12 +83,12 @@ class Settings(BaseSettings):
     RATE_LIMIT_MAX_CLIENTS: int = 10000     # max tracked clients (memory cap)
 
     # -----------------------------------------------------------------
-    # 8. MULTI-AGENT ORCHESTRATION
+    # 8. DATASET MERGING
     # -----------------------------------------------------------------
     MERGE_SIMILARITY_THRESHOLD: float = 0.6 # threshold for campaign merging (0-1)
 
     # -----------------------------------------------------------------
-    # 8. MULTI-AGENT ORCHESTRATION
+    # 9. MULTI-AGENT ORCHESTRATION
     # -----------------------------------------------------------------
     COGNITIVE_RISK_THRESHOLD: float = 0.7   # risk_score threshold → scam intervention
     AGENT_TIMEOUT_SECONDS: int = 15         # per-agent timeout for LangChain chains

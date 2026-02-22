@@ -16,9 +16,9 @@ from telegram.ext import (
 load_dotenv()
 
 # Configuration
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "your_token_here")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "your_token_here").strip('"').strip("'")
 API_URL = os.getenv("BLOCKSAFE_API_URL", "http://blocksafe-api:8000/api/v1/analyze/text")
-API_KEY = os.getenv("API_KEY", "your_api_auth_key_here")  # For X-API-KEY header
+API_KEY = os.getenv("API_AUTH_KEY", "your_api_auth_key_here").strip('"').strip("'")
 
 # Logging
 logging.basicConfig(
@@ -46,7 +46,10 @@ async def call_blocksafe_api(message_text: str, mode: str, session_id: str = Non
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Backend Connection Failed: {e}")
-            return {"error": "BlockSafe API is currently unreachable."}
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"Response Status: {e.response.status_code}")
+                logger.error(f"Response Body: {e.response.text}")
+            return {"error": f"BlockSafe API error: {e}"}
 
 # --- Handlers ---
 
@@ -77,14 +80,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f"❌ {result['error']}")
             return
 
-        honeypot = result.get("honeypot_result", {})
-        reply = honeypot.get("ai_reply", "The agent is silent.")
+        honeypot_data = result.get("honeypot_response") or {}
+        reply = honeypot_data.get("content", "The agent is silent.")
         
         await update.message.reply_text(reply)
 
         # Check for Governor termination
-        if honeypot.get("termination_reason"):
-            reason = honeypot.get("termination_reason")
+        honeypot_result = result.get("honeypot_result") or {}
+        if honeypot_result.get("termination_reason"):
+            reason = honeypot_result.get("termination_reason")
             await update.message.reply_text(
                 f"🛑 **Session Terminated**: {reason}\n"
                 "Intelligence gathering complete.",
@@ -143,9 +147,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(f"❌ {result['error']}")
             return
 
-        honeypot = result.get("honeypot_result", {})
-        session_id = honeypot.get("session_id")
-        ai_reply = honeypot.get("ai_reply", "Hello! How can I help with this 'offer'?")
+        session_id = result.get("session_id")
+        honeypot_data = result.get("honeypot_response") or {}
+        ai_reply = honeypot_data.get("content", "Hello! How can I help with this 'offer'?")
 
         if session_id:
             context.user_data["session_id"] = session_id

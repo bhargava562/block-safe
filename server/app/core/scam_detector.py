@@ -100,12 +100,15 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
             settings = get_settings()
 
             # Initialize the new google-genai client
-            ScamClassifier._client = genai.Client(
-                api_key=settings.GEMINI_API_KEY.get_secret_value()
-            )
-
-            ScamClassifier._configured = True
-            logger.info(f"Scam classifier configured with model: {settings.GEMINI_MODEL}")
+            if settings.GEMINI_API_KEY:
+                ScamClassifier._client = genai.Client(
+                    api_key=settings.GEMINI_API_KEY.get_secret_value()
+                )
+                ScamClassifier._configured = True
+                logger.info(f"Scam classifier configured with model: {settings.GEMINI_MODEL}")
+            else:
+                logger.warning("GEMINI_API_KEY is missing. Classifier will use rule-based fallback.")
+                ScamClassifier._configured = False
 
         except Exception as e:
             logger.error(f"Failed to configure Gemini: {e}")
@@ -349,6 +352,10 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
             """
             
             # Call Gemini
+            if not self._client:
+                logger.debug("AI client not configured, skipping pattern learning")
+                return
+
             settings = get_settings()
             response = await self._client.aio.models.generate_content(
                 model=settings.GEMINI_MODEL,

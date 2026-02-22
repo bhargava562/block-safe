@@ -103,7 +103,7 @@ async def _run_cognitive_profiler(message: str) -> Dict[str, Any]:
 
             llm = ChatOpenAI(
                 model=settings.OPENAI_MODEL,
-                api_key=settings.OPENAI_API_KEY.get_secret_value(),
+                api_key=settings.OPENAI_API_KEY.get_secret_value() if settings.has_openai else "dummy",
                 temperature=0.1,
                 max_tokens=512,
                 request_timeout=settings.REQUEST_TIMEOUT_SECONDS,
@@ -126,7 +126,7 @@ async def _run_cognitive_profiler(message: str) -> Dict[str, Any]:
 
             llm = ChatGroq(
                 model=settings.GROQ_MODEL,
-                api_key=settings.GROQ_API_KEY.get_secret_value(),
+                api_key=settings.GROQ_API_KEY.get_secret_value() if settings.has_groq else "dummy",
                 temperature=0.1,
                 max_tokens=512,
                 request_timeout=settings.REQUEST_TIMEOUT_SECONDS,
@@ -140,7 +140,31 @@ async def _run_cognitive_profiler(message: str) -> Dict[str, Any]:
                 logger.info("CognitiveProfiler: Groq fallback success")
                 return result
         except Exception as e:
-            logger.error(f"CognitiveProfiler: Groq fallback also failed ({e})")
+            logger.warning(f"CognitiveProfiler: Groq fallback failed ({e}), falling back to DeepSeek")
+
+    # Fallback to DeepSeek
+    if settings.has_deepseek:
+        try:
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(
+                model=settings.DEEPSEEK_MODEL,
+                api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
+                base_url="https://api.deepseek.com/v1",
+                temperature=0.1,
+                max_tokens=512,
+                request_timeout=settings.REQUEST_TIMEOUT_SECONDS,
+            )
+            response = await llm.ainvoke([
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Analyze this message:\n\n{message}"}
+            ])
+            result = _parse_json_response(response.content)
+            if result:
+                logger.info("CognitiveProfiler: DeepSeek fallback success")
+                return result
+        except Exception as e:
+            logger.error(f"CognitiveProfiler: DeepSeek fallback also failed ({e})")
 
     # Final fallback: rule-based heuristics
     return _heuristic_cognitive_profile(message)
@@ -174,6 +198,9 @@ async def _run_policy_validator(message: str) -> Dict[str, Any]:
         from google import genai
         from google.genai import types
 
+        if not settings.GEMINI_API_KEY:
+             raise ValueError("GEMINI_API_KEY missing")
+        
         client = genai.Client(
             api_key=settings.GEMINI_API_KEY.get_secret_value()
         )
@@ -214,7 +241,7 @@ async def _run_policy_validator(message: str) -> Dict[str, Any]:
 
             llm = ChatGroq(
                 model=settings.GROQ_MODEL,
-                api_key=settings.GROQ_API_KEY.get_secret_value(),
+                api_key=settings.GROQ_API_KEY.get_secret_value() if settings.has_groq else "dummy",
                 temperature=0.1,
                 max_tokens=512,
                 request_timeout=settings.REQUEST_TIMEOUT_SECONDS,
@@ -228,7 +255,31 @@ async def _run_policy_validator(message: str) -> Dict[str, Any]:
                 logger.info("PolicyValidator: Groq fallback success")
                 return result
         except Exception as e:
-            logger.error(f"PolicyValidator: Groq fallback also failed ({e})")
+            logger.warning(f"PolicyValidator: Groq fallback failed ({e}), falling back to DeepSeek")
+
+    # Fallback to DeepSeek
+    if settings.has_deepseek:
+        try:
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(
+                model=settings.DEEPSEEK_MODEL,
+                api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
+                base_url="https://api.deepseek.com/v1",
+                temperature=0.1,
+                max_tokens=512,
+                request_timeout=settings.REQUEST_TIMEOUT_SECONDS,
+            )
+            response = await llm.ainvoke([
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Validate this message:\n\n{message}"}
+            ])
+            result = _parse_json_response(response.content)
+            if result:
+                logger.info("PolicyValidator: DeepSeek fallback success")
+                return result
+        except Exception as e:
+            logger.error(f"PolicyValidator: DeepSeek fallback also failed ({e})")
 
     return {
         "claimed_entity": "Unknown",

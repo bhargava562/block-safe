@@ -30,9 +30,13 @@ class DatasetUpdater:
     def _configure_ai(self):
         """Configure AI client for pattern analysis"""
         try:
-            self._client = genai.Client(
-                api_key=self.settings.GEMINI_API_KEY.get_secret_value()
-            )
+            if self.settings.GEMINI_API_KEY:
+                self._client = genai.Client(
+                    api_key=self.settings.GEMINI_API_KEY.get_secret_value()
+                )
+            else:
+                logger.warning("GEMINI_API_KEY is missing, dataset updater will use fallbacks (Groq)")
+                self._client = None
         except Exception as e:
             logger.error(f"Failed to configure AI for dataset updater: {e}")
     

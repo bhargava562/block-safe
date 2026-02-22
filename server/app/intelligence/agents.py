@@ -78,7 +78,7 @@ def _get_profiler_chain():
     deepseek_llm = ChatOpenAI(
         model=settings.DEEPSEEK_MODEL,
         api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
-        base_url="https://api.deepseek.com",
+        base_url="https://api.deepseek.com/v1",
         temperature=0.1,
         max_tokens=512,
         request_timeout=settings.AGENT_TIMEOUT_SECONDS,
@@ -115,7 +115,7 @@ def _get_fact_checker_chain():
     deepseek_llm = ChatOpenAI(
         model=settings.DEEPSEEK_MODEL,
         api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
-        base_url="https://api.deepseek.com",
+        base_url="https://api.deepseek.com/v1",
         temperature=0.1,
         max_tokens=512,
         request_timeout=settings.AGENT_TIMEOUT_SECONDS,

@@ -78,30 +78,33 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM ── 7. Check .env file ──────────────────────────────────────
+REM ── 7. Check Configuration ─────────────────────────────────────
 if exist "server\.env" (
     echo [OK] server\.env found
+    echo [..] Synchronizing root-level .env for Docker...
+    copy "server\.env" ".env" >nul
 ) else (
     echo [!!] server\.env NOT found
     copy "server\.env.example" "server\.env" >nul
-    echo     Created server\.env from template - EDIT IT with your actual API keys
+    copy "server\.env.example" ".env" >nul
+    echo     Created .env files from template - EDIT server\.env with your actual API keys
 )
 
 echo.
 echo ============================================
 echo   Setup Complete!
 echo ============================================
-echo   Quick Start:
+echo   Quick Start (Local):
 echo   1. Activate:  %VENV_DIR%\Scripts\activate
-echo   2. Run:       cd server ^& python run.py
+echo   2. Run API:   cd server ^& python run.py
 echo.
-echo   Advanced:
-echo   - Test:       cd server ^& python -m pytest app/tests/ -v
-echo   - Docker:     docker compose up --build
-echo   - Guide:      Check postman_testing_guide.md for API testing
+echo   Advanced (Docker Full Stack):
+echo   - Run All:    docker compose up --build
+echo   - Dashboard:  http://localhost:8081
+echo   - API:        http://localhost:8000
 echo.
 echo   REQUIRED KEYS (.env):
 echo   - GEMINI_API_KEY
-echo   - GROQ_API_KEY / DEEPSEEK_API_KEY (for fallback)
-echo   - SUPABASE_URL / SUPABASE_SERVICE_KEY (for state tracking)
+echo   - GROQ_API_KEY / DEEPSEEK_API_KEY
+echo   - SUPABASE_URL / SUPABASE_SERVICE_KEY
 echo ============================================

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { MessageSquare, ExternalLink, Clock } from 'lucide-react';
+import { MessageSquare, ExternalLink, Clock, Fingerprint } from 'lucide-react';
 
 export default function SessionFeed() {
     const [sessions, setSessions] = useState([]);
@@ -119,8 +119,8 @@ export default function SessionFeed() {
                                         {msg.sender_role === 'scammer' ? 'Scammer' : 'BlockSafe Agent'}
                                     </span>
                                     <div className={`text-xs p-3 rounded-xl max-w-[85%] ${msg.sender_role === 'scammer'
-                                            ? 'bg-zinc-800 rounded-tl-none'
-                                            : 'bg-primary/20 text-primary border border-primary/30 rounded-tr-none'
+                                        ? 'bg-zinc-800 rounded-tl-none'
+                                        : 'bg-primary/20 text-primary border border-primary/30 rounded-tr-none'
                                         }`}>
                                         {msg.message_text}
                                     </div>

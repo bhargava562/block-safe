@@ -19,7 +19,7 @@ load_dotenv()
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "your_token_here").strip('"').strip("'")
 # Render will provide the actual URL via environment variables.
 # It falls back to localhost if the variable isn't found (for local dev).
-BASE_API_URL = os.getenv("BLOCKSAFE_API_URL", "http://127.0.0.1:8000")
+BASE_API_URL = os.getenv("BLOCKSAFE_API_URL", "http://127.0.0.1:8000").rstrip("/")
 API_URL = f"{BASE_API_URL}/api/v1/analyze/text"
 API_KEY = os.getenv("API_AUTH_KEY", "your_api_auth_key_here").strip('"').strip("'")
 

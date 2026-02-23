@@ -1,0 +1,28 @@
+---
+id: 1536703f-d656-4a1a-8075-bba44db560a7
+---
+graph TD
+    classDef user fill:#ff9999,stroke:#333,stroke-width:2px;
+    classDef bot fill:#2CA5E0,stroke:#333,stroke-width:2px,color:#fff;
+    classDef backend fill:#005571,stroke:#333,stroke-width:2px,color:#fff;
+    classDef ai fill:#f9a826,stroke:#333,stroke-width:2px;
+    classDef db fill:#3ECF8E,stroke:#333,stroke-width:2px;
+    classDef frontend fill:#20232a,stroke:#333,stroke-width:2px,color:#61dafb;
+
+    A[🦹‍♂️ Scammer/Attacker]:::user -->|Sends Scam Message| B(📱 Telegram Bot UI):::bot
+    
+    B -->|Shield Mode API Call| C{⚙️ FastAPI Backend\nCognitive Risk Engine}:::backend
+    
+    C -->|High Risk Detected| D[🧠 LangGraph Swarm\nMulti-Agent Routing]:::ai
+    D <-->|Primary Inference| G((🚀 Groq: Llama-3.3-70B)):::ai
+    D <-->|HA Fallback| DS((🐋 DeepSeek-V3)):::ai
+    
+    D -->|Extract & Update State| F[(🗄️ Supabase DB)]:::db
+    F -->|Conversation History| D
+    
+    B -->|User Clicks 'Engage Honeypot'| D
+    D -->|AI Generated Delay Tactic| B
+    B -->|Replies to Scammer| A
+    
+    F -->|Real-Time Analytics| H[💻 React Admin Dashboard]:::frontend
+    H -->|Export Button| I[📄 Threat Intel JSONL]:::frontend

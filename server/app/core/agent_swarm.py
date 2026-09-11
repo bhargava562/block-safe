@@ -194,45 +194,43 @@ async def _run_policy_validator(message: str) -> Dict[str, Any]:
     )
 
     # Try Gemini with search grounding
-    try:
-        from google import genai
-        from google.genai import types
-
-        if not settings.GEMINI_API_KEY:
-             raise ValueError("GEMINI_API_KEY missing")
-        
-        client = genai.Client(
-            api_key=settings.GEMINI_API_KEY.get_secret_value()
-        )
-
-        # Use Google Search grounding for real-world policy verification
+    if settings.GEMINI_API_KEY:
         try:
-            response = await client.aio.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=f"{system_prompt}\n\nMessage to validate:\n{message}",
-                config=types.GenerateContentConfig(
-                    temperature=0.1,
-                    max_output_tokens=512,
-                    tools=[types.Tool(google_search=types.GoogleSearch())],
-                )
-            )
-        except Exception:
-            # Fallback without search grounding if not supported
-            response = await client.aio.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=f"{system_prompt}\n\nMessage to validate:\n{message}",
-                config=types.GenerateContentConfig(
-                    temperature=0.1,
-                    max_output_tokens=512,
-                )
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(
+                api_key=settings.GEMINI_API_KEY.get_secret_value()
             )
 
-        result = _parse_json_response(response.text)
-        if result:
-            logger.info("PolicyValidator: Gemini success")
-            return result
-    except Exception as e:
-        logger.warning(f"PolicyValidator: Gemini failed ({e}), falling back to Groq")
+            # Use Google Search grounding for real-world policy verification
+            try:
+                response = await client.aio.models.generate_content(
+                    model=settings.GEMINI_MODEL,
+                    contents=f"{system_prompt}\n\nMessage to validate:\n{message}",
+                    config=types.GenerateContentConfig(
+                        temperature=0.1,
+                        max_output_tokens=512,
+                        tools=[types.Tool(google_search=types.GoogleSearch())],
+                    )
+                )
+            except Exception:
+                # Fallback without search grounding if not supported
+                response = await client.aio.models.generate_content(
+                    model=settings.GEMINI_MODEL,
+                    contents=f"{system_prompt}\n\nMessage to validate:\n{message}",
+                    config=types.GenerateContentConfig(
+                        temperature=0.1,
+                        max_output_tokens=512,
+                    )
+                )
+
+            result = _parse_json_response(response.text)
+            if result:
+                logger.info("PolicyValidator: Gemini success")
+                return result
+        except Exception as e:
+            logger.warning(f"PolicyValidator: Gemini failed ({e}), falling back to Groq")
 
     # Fallback to Groq
     if settings.has_groq:

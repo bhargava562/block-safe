@@ -108,6 +108,11 @@ I'll contact my bank directly using the number on my card. Thank you for your co
         """Configure High-Availability LLM chain for honeypot"""
         try:
             settings = get_settings()
+
+            if not settings.has_groq and not settings.has_deepseek:
+                logger.warning("No honeypot LLM provider configured. Honeypot is disabled.")
+                HoneypotAgent._configured = False
+                return
             
             # 1. Groq (Primary)
             from langchain_groq import ChatGroq
@@ -120,26 +125,29 @@ I'll contact my bank directly using the number on my card. Thank you for your co
                 max_retries=1
             )
             
-            # 2. DeepSeek (Fallback)
-            from langchain_openai import ChatOpenAI
-            self.deepseek_llm = ChatOpenAI(
-                model=settings.DEEPSEEK_MODEL,
-                api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
-                base_url="https://api.deepseek.com/v1",
-                temperature=0.7,
-                max_tokens=512,
-                request_timeout=settings.AGENT_TIMEOUT_SECONDS,
-                max_retries=1
-            )
-
             # Define fallback sequence
             fallbacks = []
-            if settings.has_deepseek: 
-                fallbacks.append(self.deepseek_llm)
+            if settings.has_deepseek:
+                try:
+                    from langchain_openai import ChatOpenAI
+
+                    self.deepseek_llm = ChatOpenAI(
+                        model=settings.DEEPSEEK_MODEL,
+                        api_key=settings.DEEPSEEK_API_KEY.get_secret_value(),
+                        base_url="https://api.deepseek.com",
+                        temperature=0.7,
+                        max_tokens=512,
+                        request_timeout=settings.AGENT_TIMEOUT_SECONDS,
+                        max_retries=1
+                    )
+                    fallbacks.append(self.deepseek_llm)
+                except Exception as e:
+                    logger.warning(f"DeepSeek fallback unavailable: {e}")
             
             self._chain = self.groq_llm.with_fallbacks(fallbacks)
             HoneypotAgent._configured = True
-            logger.info("Honeypot agent configured with Groq->DeepSeek fallback chain")
+            providers = "Groq->DeepSeek" if fallbacks else "Groq"
+            logger.info(f"Honeypot agent configured with {providers} chain")
 
         except Exception as e:
             logger.error(f"Failed to configure honeypot: {e}")

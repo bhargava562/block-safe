@@ -4,8 +4,12 @@ Handles persistent state for honeypot sessions and messages.
 """
 
 from typing import List, Optional, Dict, Any
-from postgrest import APIResponse
-from supabase import create_client, Client
+
+try:
+    from supabase import create_client, Client
+except ImportError:
+    create_client = None
+    Client = Any
 from app.config import get_settings
 from app.utils.logger import logger
 
@@ -27,6 +31,10 @@ class DatabaseManager:
 
     def _connect(self):
         """Initialize the Supabase client."""
+        if create_client is None:
+            logger.warning("Supabase client dependencies are unavailable. Database operations will be disabled.")
+            return
+
         settings = get_settings()
         if not settings.has_supabase:
             logger.warning("Supabase credentials missing. Database operations will be disabled.")

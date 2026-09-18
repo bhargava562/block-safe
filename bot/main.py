@@ -29,33 +29,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- State Management ---
-active_sessions = {}  # chat_id -> session_id
-blocked_users = set() # chat_id set for terminated sessions
-
 # --- API Gateway ---
 
 async def call_blocksafe_api(message_text: str, mode: str, session_id: str = None) -> dict:
-    """
-    Asynchronously calls the FastAPI backend without blocking the Telegram event loop.
-    """
+    """Asynchronously calls the BlockSafe FastAPI backend."""
     payload = {
         "message": message_text,
         "mode": mode
     }
-    
-    # Inject the Supabase session continuity tracker if it exists
     if session_id:
         payload["session_id"] = session_id
 
     headers = {"X-API-KEY": API_KEY}
 
-    # Using an async context manager ensures the connection is closed securely
-    # Set a 30-second timeout to accommodate maximum LLM latency during fallbacks
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=45.0) as client:
         try:
             response = await client.post(API_URL, json=payload, headers=headers)
-            response.raise_for_status() # Raises an error for 4xx/5xx responses
+            response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Backend Connection Failed: {e}")
@@ -68,11 +58,6 @@ async def call_blocksafe_api(message_text: str, mode: str, session_id: str = Non
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command."""
-    chat_id = update.effective_chat.id
-    if chat_id in blocked_users:
-        await update.message.reply_text("🛑 This account has been flagged for security and further interaction is restricted.")
-        return
-
     await update.message.reply_text(
         "🛡️ **BlockSafe Bot Active**\n\n"
         "Forward or type any suspicious message here. I will analyze it for scams "
@@ -86,14 +71,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     chat_id = update.effective_chat.id
 
-    if chat_id in blocked_users:
-        return # Silently ignore further messages from blocked users
-
     # Check if we are in an active honeypot session
-    session_id = active_sessions.get(chat_id)
+    session_id = context.user_data.get("session_id")
 
     if session_id:
-        # 3. Continuity Loop (Subsequent API Calls)
+        # Continue Honeypot Conversation
         await update.message.reply_chat_action("typing")
         result = await call_blocksafe_api(text, "honeypot", session_id)
         
@@ -112,13 +94,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reason = honeypot_result.get("termination_reason")
             await update.message.reply_text(
                 f"🛑 **Session Terminated**: {reason}\n"
-                "Intelligence gathering complete. No further action needed.",
+                "Intelligence gathering complete.",
                 parse_mode="Markdown"
             )
-            active_sessions.pop(chat_id, None)
-            blocked_users.add(chat_id)
+            context.user_data.pop("session_id", None)
+            context.user_data.pop("original_scam", None)
     else:
-        # 1. Interception (Shield Mode API Call)
+        # Initial Shield Analysis
         await update.message.reply_chat_action("typing")
         result = await call_blocksafe_api(text, "shield")
 
@@ -128,20 +110,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         is_scam = result.get("is_scam", False)
         confidence = result.get("confidence", 0.0)
-        reason = result.get("reasoning", "Suspicious patterns detected.")
+        reason = result.get("reasoning", "No specific reason provided.")
 
         if is_scam:
             score_pct = int(confidence * 100)
             keyboard = [[InlineKeyboardButton("🛡️ Engage Honeypot", callback_data="engage_honeypot")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            # Store original message for the Handshake
+            # Store original text for the "handshake"
             context.user_data["original_scam"] = text
 
             await update.message.reply_text(
                 f"🚨 **SCAM DETECTED** ({score_pct}%)\n\n"
                 f"**Reason**: {reason}\n\n"
-                "Would you like to engage the AI Honeypot?",
+                "Would you like to engage the AI Honeypot to gather intelligence from the scammer?",
                 reply_markup=reply_markup,
                 parse_mode="Markdown"
             )
@@ -151,11 +133,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle button clicks."""
     query = update.callback_query
-    chat_id = update.effective_chat.id
     await query.answer()
-
-    if chat_id in blocked_users:
-        return
 
     if query.data == "engage_honeypot":
         original_text = context.user_data.get("original_scam")
@@ -165,7 +143,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text("🔄 Initializing Honeypot... please wait.")
         
-        # 2. Handshake (First Honeypot API Call)
+        # Handshake: First Honeypot Call
         result = await call_blocksafe_api(original_text, "honeypot")
         
         if "error" in result:
@@ -177,10 +155,11 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ai_reply = honeypot_data.get("content", "Hello! How can I help with this 'offer'?")
 
         if session_id:
-            active_sessions[chat_id] = session_id
+            context.user_data["session_id"] = session_id
             await query.message.reply_text(
                 "🤖 **Honeypot Active**\n"
-                "Reply to this chat to continue the conversation.",
+                "You can now reply to this message as if you were the target. "
+                "The AI will maintain the conversation to extract data.",
                 parse_mode="Markdown"
             )
             await query.message.reply_text(ai_reply)
@@ -191,7 +170,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     if TOKEN == "your_token_here":
-        print("ERROR: Please set TELEGRAM_BOT_TOKEN in bot/.env")
+        print("ERROR: Please set TELEGRAM_BOT_TOKEN in .env")
     else:
         app = ApplicationBuilder().token(TOKEN).build()
 

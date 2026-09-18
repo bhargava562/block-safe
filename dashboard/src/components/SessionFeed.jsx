@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Fingerprint, MessageSquare } from 'lucide-react';
+import { MessageSquare, ExternalLink, Clock, Fingerprint } from 'lucide-react';
 
 export default function SessionFeed() {
     const [sessions, setSessions] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchSessions();
@@ -31,6 +32,7 @@ export default function SessionFeed() {
             .limit(50);
 
         if (!error) setSessions(data);
+        setLoading(false);
     };
 
     const fetchMessages = async (sessionId) => {

@@ -134,7 +134,8 @@ async def analyze_text(
                     session_id=session_id,
                     campaign_id=multi_agent_result.campaign_result.get("campaign_id") if multi_agent_result else None,
                     scam_type=classification.scam_type or "phishing",
-                    confidence=effective_confidence
+                    confidence=effective_confidence,
+                    initial_message=message
                 )
             else:
                 turns_completed = session.get("turns_completed", 0)

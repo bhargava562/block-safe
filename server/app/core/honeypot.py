@@ -9,9 +9,6 @@ from typing import Optional, List, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 
-from google import genai
-from google.genai import types
-
 from app.config import get_settings
 from app.utils.helpers import extract_all_entities, merge_entities, count_entities, ExtractedData
 from app.utils.logger import logger, log_honeypot
@@ -36,6 +33,10 @@ class HoneypotTurn:
     scammer_message: str
     agent_response: str
     entities_extracted: ExtractedData
+    trust_score: float = 0.0
+    alternate_content: Optional[str] = None
+    scammer_tone: Optional[str] = None
+    agent_tone: Optional[str] = None
 
 
 @dataclass
@@ -108,11 +109,6 @@ I'll contact my bank directly using the number on my card. Thank you for your co
         """Configure High-Availability LLM chain for honeypot"""
         try:
             settings = get_settings()
-
-            if not settings.has_groq and not settings.has_deepseek:
-                logger.warning("No honeypot LLM provider configured. Honeypot is disabled.")
-                HoneypotAgent._configured = False
-                return
             
             # 1. Groq (Primary)
             from langchain_groq import ChatGroq
@@ -125,29 +121,26 @@ I'll contact my bank directly using the number on my card. Thank you for your co
                 max_retries=1
             )
             
+            # 2. DeepSeek (Fallback)
+            from langchain_openai import ChatOpenAI
+            self.deepseek_llm = ChatOpenAI(
+                model=settings.DEEPSEEK_MODEL,
+                api_key=settings.DEEPSEEK_API_KEY.get_secret_value() if settings.has_deepseek else "dummy",
+                base_url="https://api.deepseek.com/v1",
+                temperature=0.7,
+                max_tokens=512,
+                request_timeout=settings.AGENT_TIMEOUT_SECONDS,
+                max_retries=1
+            )
+
             # Define fallback sequence
             fallbacks = []
-            if settings.has_deepseek:
-                try:
-                    from langchain_openai import ChatOpenAI
-
-                    self.deepseek_llm = ChatOpenAI(
-                        model=settings.DEEPSEEK_MODEL,
-                        api_key=settings.DEEPSEEK_API_KEY.get_secret_value(),
-                        base_url="https://api.deepseek.com",
-                        temperature=0.7,
-                        max_tokens=512,
-                        request_timeout=settings.AGENT_TIMEOUT_SECONDS,
-                        max_retries=1
-                    )
-                    fallbacks.append(self.deepseek_llm)
-                except Exception as e:
-                    logger.warning(f"DeepSeek fallback unavailable: {e}")
+            if settings.has_deepseek: 
+                fallbacks.append(self.deepseek_llm)
             
             self._chain = self.groq_llm.with_fallbacks(fallbacks)
             HoneypotAgent._configured = True
-            providers = "Groq->DeepSeek" if fallbacks else "Groq"
-            logger.info(f"Honeypot agent configured with {providers} chain")
+            logger.info("Honeypot agent configured with Groq->DeepSeek fallback chain")
 
         except Exception as e:
             logger.error(f"Failed to configure honeypot: {e}")
@@ -316,30 +309,6 @@ I'll contact my bank directly using the number on my card. Thank you for your co
         except Exception as e:
             logger.error(f"Honeypot AI error: {e}")
             return self._get_fallback_response()
-
-        try:
-            text = response.text.strip()
-            # Remove markdown fences
-            if "```" in text:
-                 text = text.replace("```json", "").replace("```", "")
-            
-            # Find JSON object boundaries
-            start = text.find("{")
-            end = text.rfind("}")
-            
-            if start != -1 and end != -1:
-                text = text[start:end+1]
-            
-            return json.loads(text)
-        except json.JSONDecodeError:
-            # Fallback if JSON is malformed
-            return {
-                "content": response.text.strip(),
-                "trust_score": 0.5,
-                "alternate_content": None,
-                "scammer_tone": "Unknown",
-                "agent_tone": "Neutral"
-            }
 
     def _get_fallback_response(self) -> dict:
         """Provide safe fallback response when AI fails"""

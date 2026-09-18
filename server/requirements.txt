@@ -29,10 +29,10 @@ protobuf>=5.29.6  # Fixes CVE-2026-0994 (DoS via Any nesting)
 # ---------------------------------------------------------
 # 3. MULTIMODAL / AUDIO PROCESSING
 # ---------------------------------------------------------
-faster-whisper==1.0.3
-librosa==0.10.2.post1
-soundfile==0.12.1
-numpy==1.26.4
+faster-whisper>=1.0.3
+librosa>=0.10.2.post1
+soundfile>=0.12.1
+numpy>=1.26.4
 
 # ---------------------------------------------------------
 # 4. HTTP, UTILITIES & SECURITY

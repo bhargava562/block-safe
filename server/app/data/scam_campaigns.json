@@ -4,36 +4,31 @@
     "primary_target_entity": "SBI Bank",
     "scam_category": "phishing",
     "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 29,
+    "total_attempts_tracked": 21,
     "first_seen": "2026-02-21T09:08:02.112973+00:00",
-    "last_seen": "2026-09-10T15:45:58.647784+00:00",
+    "last_seen": "2026-04-18T14:58:17.303898+00:00",
     "threat_artifacts": {
       "channels_used": [
         "Call",
-        "SMS",
-        "UPI",
-        "WhatsApp"
+        "SMS"
       ],
       "extracted_links": [
-        "http://fake-bank-verification.com/login.",
         "http://sbi-secure.in/kyc-verify.",
         "http://sbi-secure.in/update",
         "http://sbi-secure.in/update-pan",
-        "http://sbi-secure.in/update-pan."
+        "http://sbi-secure.in/update-pan.",
+        "http://sbi-update.fake"
       ],
       "extracted_phones": [
         "+919876543210",
-        "+919999888877",
-        "1234567890"
+        "+919999888877"
       ],
-      "extracted_upis": [
-        "secure.verify@upi"
-      ]
+      "extracted_upis": []
     },
     "ai_feedback": {
-      "openai_emotional_profile": "Artificial urgency pressure detected via time constraints. Fear-based manipulation through account/legal threats. Authority figure impersonation present",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Authority figure impersonation present. Matches pattern: phishing"
+      "openai_emotional_profile": "The message uses fear induction by threatening permanent account closure, creates urgency by demanding immediate action, and impersonates authority by claiming to be from a legitimate bank (SBI) to manipulate the recipient into taking action.",
+      "gemini_policy_violations": "SBI Bank typically communicates with customers through official channels such as their website, mobile app, or registered email and phone numbers. They do not usually ask customers to click on suspicious links or provide sensitive information like OTPs via unverified websites. The use of a fake website and an unverified phone number raises concerns about phishing, and the threat of permanent account closure is a common tactic used by scammers to create a sense of urgency.",
+      "primary_suspected_reason": "Violates SBI Bank's official communication policy. High fear induction detected. Artificial urgency pressure applied. Authority figure impersonation present. Matches pattern: card_fraud"
     },
     "raw_message_variants": [
       "URGENT: Your SBI account will be blocked in 24 hours! Update your PAN immediately by clicking: http://sbi-secure.in/update-pan. Contact: +919876543210. Failure to comply will result in account suspension - SBI Security Team",
@@ -41,7 +36,7 @@
       "Dear customer, your SBI PAN card is expired. Reactivate now via http://sbi-secure.in/kyc-verify. Call +919999888877. - SBI Care",
       "URGENT: Your SBI account will be blocked! Update PAN immediately: http://sbi-secure.in/update-pan",
       "URGENT: Your SBI account is blocked! Update PAN immediately: http://sbi-secure.in/update",
-      "URGENT! This is an official message from SBI Bank Security Department. Your bank account 123456789012 has been temporarily blocked due to suspicious activity. You must verify your account immediately. Send Rs. 5,000 to UPI ID secure.verify@upi and call +91 9876543210. Complete verification at http://fake-bank-verification.com/login. Do not delay or your account will be permanently suspended. Contact us on WhatsApp at +91 9876543210 for further assistance."
+      "Your SBI account has been blocked. Click http://sbi-update.fake to verify your OTP immediately or your account will be permanently closed. Call +919876543210"
     ]
   },
   {
@@ -49,9 +44,9 @@
     "primary_target_entity": "Amazon",
     "scam_category": "card_fraud",
     "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 10,
+    "total_attempts_tracked": 7,
     "first_seen": "2026-02-21T09:10:36.863771+00:00",
-    "last_seen": "2026-09-10T14:17:04.514136+00:00",
+    "last_seen": "2026-02-21T13:14:35.324314+00:00",
     "threat_artifacts": {
       "channels_used": [
         "SMS"
@@ -63,9 +58,9 @@
       "extracted_upis": []
     },
     "ai_feedback": {
-      "openai_emotional_profile": "No significant manipulation tactics detected via heuristic analysis.",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Matches pattern: card_fraud"
+      "openai_emotional_profile": "The message uses a sense of excitement and reward to create a false sense of urgency, prompting the recipient to act quickly to claim the gift card. The use of a well-known brand name (Amazon) attempts to establish authority and trust. The request for an OTP (one-time password) is a potential phishing tactic, aiming to exploit the recipient's impulsive response to the perceived reward.",
+      "gemini_policy_violations": "Amazon does not typically communicate with customers via suspicious links or ask for OTP sharing. This message is likely a phishing attempt, violating Amazon's policy of protecting customer information and security.",
+      "primary_suspected_reason": "Violates Amazon's official communication policy. Artificial urgency pressure applied. Matches pattern: card_fraud"
     },
     "raw_message_variants": [
       "Congratulations You won Amazon Rs.50000 gift card! Claim now: http://amazon-gifts.win/claim. Share OTP."
@@ -133,9 +128,9 @@
     "primary_target_entity": "None (Personal Message)",
     "scam_category": "phishing",
     "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 4,
+    "total_attempts_tracked": 3,
     "first_seen": "2026-02-21T10:02:14.238865+00:00",
-    "last_seen": "2026-02-21T21:02:40.648991+00:00",
+    "last_seen": "2026-02-21T13:16:26.726335+00:00",
     "threat_artifacts": {
       "channels_used": [
         "UPI"
@@ -150,9 +145,9 @@
       ]
     },
     "ai_feedback": {
-      "openai_emotional_profile": "No significant manipulation tactics detected via heuristic analysis.",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Matches pattern: phishing"
+      "openai_emotional_profile": "The message uses the word 'URGENT' and reports a severe accident to induce fear and create a sense of urgency, prompting the recipient to act quickly without verifying the authenticity of the request.",
+      "gemini_policy_violations": "This message appears to be a personal request for financial assistance due to a family emergency, rather than a communication from a corporate entity. As such, it does not claim to be from a specific entity like a bank or government department, and does not trigger a policy validation check.",
+      "primary_suspected_reason": "Violates None (Personal Message)'s official communication policy. High fear induction detected. Artificial urgency pressure applied. Matches pattern: phishing"
     },
     "raw_message_variants": [
       "URGENT: My brother has a severe accident. So please send me the money to this mobile number +91 12345 67890 or send use this upi id 1478593265@sbi"
@@ -413,108 +408,6 @@
     },
     "raw_message_variants": [
       "Hi, I am from your bank support. We detected a suspicious transaction."
-    ]
-  },
-  {
-    "campaign_id": "CAMP-UNKNOWN-MISC-003",
-    "primary_target_entity": "Unknown",
-    "scam_category": "Unknown",
-    "aggregated_scam_score": 0.0,
-    "total_attempts_tracked": 1,
-    "first_seen": "2026-02-22T03:14:19.424568+00:00",
-    "last_seen": "2026-02-22T03:14:19.424568+00:00",
-    "threat_artifacts": {
-      "channels_used": [
-        "SMS"
-      ],
-      "extracted_links": [],
-      "extracted_phones": [],
-      "extracted_upis": []
-    },
-    "ai_feedback": {
-      "openai_emotional_profile": "No significant manipulation tactics detected via heuristic analysis.",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Low risk indicators."
-    },
-    "raw_message_variants": [
-      "Hii"
-    ]
-  },
-  {
-    "campaign_id": "CAMP-UNKNOWN-MISC-004",
-    "primary_target_entity": "Unknown",
-    "scam_category": "Unknown",
-    "aggregated_scam_score": 0.0,
-    "total_attempts_tracked": 1,
-    "first_seen": "2026-09-10T13:09:24.660327+00:00",
-    "last_seen": "2026-09-10T13:09:24.660327+00:00",
-    "threat_artifacts": {
-      "channels_used": [
-        "SMS"
-      ],
-      "extracted_links": [],
-      "extracted_phones": [],
-      "extracted_upis": []
-    },
-    "ai_feedback": {
-      "openai_emotional_profile": "No significant manipulation tactics detected via heuristic analysis.",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Low risk indicators."
-    },
-    "raw_message_variants": [
-      "Hello world"
-    ]
-  },
-  {
-    "campaign_id": "CAMP-UNKNOWN-MISC-005",
-    "primary_target_entity": "Unknown",
-    "scam_category": "Unknown",
-    "aggregated_scam_score": 0.0,
-    "total_attempts_tracked": 1,
-    "first_seen": "2026-09-10T13:13:00.515139+00:00",
-    "last_seen": "2026-09-10T13:13:00.515139+00:00",
-    "threat_artifacts": {
-      "channels_used": [
-        "SMS"
-      ],
-      "extracted_links": [],
-      "extracted_phones": [],
-      "extracted_upis": []
-    },
-    "ai_feedback": {
-      "openai_emotional_profile": "No significant manipulation tactics detected via heuristic analysis.",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Low risk indicators."
-    },
-    "raw_message_variants": [
-      "Hello world"
-    ]
-  },
-  {
-    "campaign_id": "CAMP-UNKNOWN-PHISHING-006",
-    "primary_target_entity": "Unknown",
-    "scam_category": "phishing",
-    "aggregated_scam_score": 0.95,
-    "total_attempts_tracked": 4,
-    "first_seen": "2026-09-10T13:44:23.753101+00:00",
-    "last_seen": "2026-09-10T15:41:48.147484+00:00",
-    "threat_artifacts": {
-      "channels_used": [
-        "SMS"
-      ],
-      "extracted_links": [
-        "http://fake-bank.com"
-      ],
-      "extracted_phones": [],
-      "extracted_upis": []
-    },
-    "ai_feedback": {
-      "openai_emotional_profile": "Artificial urgency pressure detected via time constraints",
-      "gemini_policy_violations": "Unable to verify — all AI providers unavailable.",
-      "primary_suspected_reason": "Matches pattern: phishing"
-    },
-    "raw_message_variants": [
-      "URGENT! Your bank account has been blocked. Verify immediately at http://fake-bank.com"
     ]
   }
 ]

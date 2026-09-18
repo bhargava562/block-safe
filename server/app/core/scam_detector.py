@@ -99,11 +99,6 @@ For advance fee loans: is_scam=true, confidence=0.9+, scam_type="loan_scam" """
         try:
             settings = get_settings()
 
-            if not settings.GEMINI_API_KEY or not settings.GEMINI_API_KEY.get_secret_value():
-                logger.warning("GEMINI_API_KEY not configured, Gemini-based features will be disabled.")
-                ScamClassifier._configured = False
-                return
-
             # Initialize the new google-genai client
             if settings.GEMINI_API_KEY:
                 ScamClassifier._client = genai.Client(

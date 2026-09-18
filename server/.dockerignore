@@ -9,7 +9,3 @@ node_modules
 dist
 build
 .env
-dashboard/node_modules
-server/.venv
-server/venv
-server/__pycache__

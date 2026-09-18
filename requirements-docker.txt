@@ -18,10 +18,10 @@ langchain-groq>=0.1.9
 google-genai>=1.0.0
 
 # 3. Audio Processing (Essential only)
-faster-whisper==1.0.3
-librosa==0.10.2.post1
-soundfile==0.12.1
-numpy==1.26.4
+faster-whisper>=1.0.3
+librosa>=0.10.2.post1
+soundfile>=0.12.1
+numpy>=1.26.4
 
 # 4. Utilities & Database
 python-dotenv==1.0.1

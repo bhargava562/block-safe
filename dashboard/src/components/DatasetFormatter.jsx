@@ -20,17 +20,28 @@ export default function DatasetFormatter() {
                 .not('status', 'eq', 'active');
 
             if (sessionErr) throw sessionErr;
+
+            if (!sessions || sessions.length === 0) {
+                addLog('No archived sessions found. Engage honeypot first.');
+                return;
+            }
+
             addLog(`Found ${sessions.length} archived sessions.`);
 
             let formattedData = [];
 
             // 2. Iterate and fetch transcripts for each session
             for (const session of sessions) {
-                const { data: messages } = await supabase
+                const { data: messages, error: msgErr } = await supabase
                     .from('session_messages')
                     .select('sender_role, message_text')
                     .eq('session_id', session.id)
                     .order('created_at', { ascending: true });
+
+                // Skip sessions with no messages or query errors
+                if (msgErr || !messages || messages.length === 0) {
+                    continue;
+                }
 
                 if (formatType === 'fine_tune') {
                     // Format for OpenAI Fine-Tuning (JSONL)
@@ -47,12 +58,21 @@ export default function DatasetFormatter() {
                         risk_score: session.confidence_score,
                         turns: session.turns_completed,
                         captured_at: session.created_at,
+                        initial_message: session.initial_message || null,
                         transcript: messages
                     });
                 }
             }
 
-            // 3. Trigger Download
+            // 3. Validate we have data to export
+            if (formattedData.length === 0) {
+                addLog('No sessions with messages found. Nothing to export.');
+                return;
+            }
+
+            addLog(`Formatted ${formattedData.length} sessions with transcripts.`);
+
+            // 4. Trigger Download
             const blobType = formatType === 'fine_tune' ? 'text/plain' : 'application/json';
             const fileData = formatType === 'fine_tune' ? formattedData.join('\n') : JSON.stringify(formattedData, null, 2);
 
@@ -62,6 +82,7 @@ export default function DatasetFormatter() {
             link.href = url;
             link.download = `blocksafe_${formatType}_${new Date().toISOString().split('T')[0]}.${formatType === 'fine_tune' ? 'jsonl' : 'json'}`;
             link.click();
+            URL.revokeObjectURL(url);
 
             addLog("Export successful. Data forged.");
 

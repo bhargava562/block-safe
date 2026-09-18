@@ -20,6 +20,7 @@ services:
       - "8000:8000"
     env_file:
       - .env
+      - server/.env
     environment:
       - APP_ENV=production
       - LOG_LEVEL=INFO
@@ -49,7 +50,8 @@ services:
       blocksafe-api:
         condition: service_healthy
     env_file:
-      - .env # Load root environment configuration
+      - .env
+      - server/.env
     environment:
       - BLOCKSAFE_API_URL=http://blocksafe-api:8000
 
